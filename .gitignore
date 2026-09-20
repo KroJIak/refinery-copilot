@@ -1,0 +1,16 @@
+# Agents
+.agents/
+.codex
+.ai/
+.grok/
+AGENTS.md
+
+# Secrets
+/.env
+/.env.*
+!/.env.example
+
+# Local docs
+docs/internal/
+testing/
+**/.obsidian/
