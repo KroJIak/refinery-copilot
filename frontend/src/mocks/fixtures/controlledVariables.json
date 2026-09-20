@@ -1,0 +1,92 @@
+[
+  {
+    "key": "24-2000.P8",
+    "group": "hdu",
+    "label": "Температура входа Р-202",
+    "unit": "°C",
+    "p2": 330,
+    "p98": 375,
+    "step": 0.5,
+    "current": 341.2
+  },
+  {
+    "key": "24-2000.T11",
+    "group": "hdu",
+    "label": "Расход сырья",
+    "unit": "т/ч",
+    "p2": 150,
+    "p98": 300,
+    "step": 1,
+    "current": 208
+  },
+  {
+    "key": "24-2000.F19",
+    "group": "hdu",
+    "label": "Давление Р-202",
+    "unit": "МПа",
+    "p2": 3,
+    "p98": 5.5,
+    "step": 0.1,
+    "current": 4.2
+  },
+  {
+    "key": "crude_feed_rate_tph",
+    "group": "avt",
+    "label": "Расход нефти",
+    "unit": "т/ч",
+    "p2": 42.9,
+    "p98": 1181.3,
+    "step": 5,
+    "current": 899.5
+  },
+  {
+    "key": "avt_furnace_outlet_temp_c",
+    "group": "avt",
+    "label": "Температура выхода печи",
+    "unit": "°C",
+    "p2": 20.4,
+    "p98": 385.7,
+    "step": 0.5,
+    "current": 368
+  },
+  {
+    "key": "avt_column_pressure_mpa_abs",
+    "group": "avt",
+    "label": "Давление колонны",
+    "unit": "МПа",
+    "p2": 0.36,
+    "p98": 1.21,
+    "step": 0.01,
+    "current": 0.8
+  },
+  {
+    "key": "blend_share_kerosene",
+    "group": "blend",
+    "label": "Керосин",
+    "unit": "доля",
+    "p2": 0,
+    "p98": 1,
+    "step": 0.01,
+    "current": 0.12
+  },
+  {
+    "key": "blend_share_gasoil",
+    "group": "blend",
+    "label": "Газойль",
+    "unit": "доля",
+    "p2": 0,
+    "p98": 1,
+    "step": 0.01,
+    "current": 0.24
+  },
+  {
+    "key": "blend_additive_pct",
+    "group": "blend",
+    "label": "Присадка",
+    "unit": "%",
+    "p2": 0,
+    "p98": 3,
+    "step": 0.1,
+    "current": 0
+  }
+]

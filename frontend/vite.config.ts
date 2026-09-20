@@ -9,15 +9,18 @@ function backendOrigin(url: string): string {
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
-  const target = backendOrigin(env.BACKEND_URL || 'http://localhost:8000');
+  const target = backendOrigin(env.VITE_PROXY_TARGET || env.BACKEND_URL || 'http://localhost:8000');
 
   return {
     plugins: [react(), tailwindcss()],
+    define: mode === 'mock' ? { 'import.meta.env.VITE_USE_MOCKS': JSON.stringify('true') } : {},
     resolve: {
       alias: { '@': path.resolve(__dirname, 'src') },
     },
     server: {
+      host: '127.0.0.1',
       port: 5173,
+      strictPort: true,
       proxy: {
         '/api': {
           target,

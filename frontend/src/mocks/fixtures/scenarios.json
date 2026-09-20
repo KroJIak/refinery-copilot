@@ -1,0 +1,40 @@
+[
+  {
+    "kind": "normal",
+    "tPoint": "2024-03-15T08:00:00Z",
+    "label": "Норма",
+    "description": "Штатный режим, данные свежие",
+    "overrides": {}
+  },
+  {
+    "kind": "quality_risk",
+    "tPoint": "2026-06-15T08:00:00Z",
+    "label": "Риск серы",
+    "description": "Сера у границы 10 мг/кг",
+    "overrides": {}
+  },
+  {
+    "kind": "sour_crude",
+    "tPoint": "2026-06-15T08:00:00Z",
+    "label": "Сернистая нефть",
+    "description": "Повышенная сернистость сырья",
+    "overrides": {
+      "24-2000.P8": 339.5,
+      "blend_share_kerosene": 0.08
+    }
+  },
+  {
+    "kind": "bad_data",
+    "tPoint": "2025-03-05T08:00:00Z",
+    "label": "Плохие данные",
+    "description": "Сентинелы, пропуски и залипания",
+    "overrides": {}
+  },
+  {
+    "kind": "stale_lims",
+    "tPoint": "2026-06-01T12:00:00Z",
+    "label": "Устаревший ЛИМС",
+    "description": "Отказ из-за несвежей лаборатории",
+    "overrides": {}
+  }
+]
