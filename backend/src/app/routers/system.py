@@ -4,7 +4,7 @@ from pydantic.alias_generators import to_camel
 
 from app.config import settings
 
-router = APIRouter(prefix="/api", tags=["system"])
+router = APIRouter(tags=["system"])
 
 
 class HealthResponse(BaseModel):

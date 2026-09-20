@@ -9,8 +9,10 @@ def create_app() -> FastAPI:
     application = FastAPI(
         title="Refinery Copilot API",
         version=settings.contract_version,
-        docs_url=None,
-        redoc_url=None,
+        root_path="/api",
+        docs_url="/docs",
+        redoc_url="/redoc",
+        openapi_url="/openapi.json",
     )
     application.add_middleware(
         CORSMiddleware,

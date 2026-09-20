@@ -1,6 +1,3 @@
-# Local host ports. The base compose file does not publish them.
-# `docker compose` merges this file automatically.
-
 services:
   api:
     ports:
