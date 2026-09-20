@@ -1,5 +1,8 @@
 node_modules
 dist
+*.tsbuildinfo
+coverage
+.vite
 .env
 .env.local
 .env.*.local

@@ -1,8 +1,25 @@
 # Демо-стенд «Refinery Copilot».
-# Пока есть только фронт-заглушка. Сервис api появится вместе с backend.
-# Браузер всегда ходит на /api того же сайта. VITE_USE_MOCKS вшивается в сборку.
+# Хостовые порты не публикуются здесь — только docker-compose.override.yml.
+# Браузер ходит на /api того же сайта. VITE_USE_MOCKS вшивается в сборку web.
 
 services:
+  api:
+    build: ./backend
+    env_file: .env
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=2).status == 200 else 1)",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
   web:
     build:
       context: ./frontend
@@ -11,4 +28,7 @@ services:
     env_file: .env
     environment:
       BACKEND_URL: ${BACKEND_URL:-http://api:8000}
+    depends_on:
+      api:
+        condition: service_healthy
     restart: unless-stopped

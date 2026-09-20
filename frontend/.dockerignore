@@ -1,6 +1,23 @@
+# Node
 node_modules
 dist
+*.tsbuildinfo
+coverage
+.vite
+
+# Secrets
 .env
 .env.local
 .env.*.local
+
+# Docs and tests (not needed in the nginx image)
 *.md
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+
+# Editors
+.idea
+.vscode
+.DS_Store

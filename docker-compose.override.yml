@@ -2,6 +2,9 @@
 # `docker compose` merges this file automatically.
 
 services:
+  api:
+    ports:
+      - "${EXTERNAL_API_PORT:-8000}:8000"
   web:
     ports:
-      - "${WEB_PORT:-8080}:80"
+      - "${EXTERNAL_WEB_PORT:-8080}:80"

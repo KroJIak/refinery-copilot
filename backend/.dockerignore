@@ -1,0 +1,22 @@
+# Python junk
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+*.egg-info/
+dist/
+build/
+tests/
+
+# Secrets and docs
+.env
+.env.*
+*.md
+
+# Data the image must not bake in
+data/
+artifacts/
