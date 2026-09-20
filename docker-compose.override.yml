@@ -1,0 +1,7 @@
+# Local host ports. The base compose file does not publish them.
+# `docker compose` merges this file automatically.
+
+services:
+  web:
+    ports:
+      - "${WEB_PORT:-8080}:80"

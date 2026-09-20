@@ -1,0 +1,14 @@
+# Демо-стенд «Refinery Copilot».
+# Пока есть только фронт-заглушка. Сервис api появится вместе с backend.
+# Браузер всегда ходит на /api того же сайта. VITE_USE_MOCKS вшивается в сборку.
+
+services:
+  web:
+    build:
+      context: ./frontend
+      args:
+        VITE_USE_MOCKS: ${VITE_USE_MOCKS:-true}
+    env_file: .env
+    environment:
+      BACKEND_URL: ${BACKEND_URL:-http://api:8000}
+    restart: unless-stopped
