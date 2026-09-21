@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.routers.system import router as system_router
+from app.routers.api import router as api_router
 
 
 def create_app() -> FastAPI:
@@ -20,7 +20,15 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    application.include_router(system_router)
+    application.include_router(api_router)
+    application.state.core = None
+
+    @application.on_event("startup")
+    def _load_core() -> None:
+        from app.services.core_bridge import AppState
+
+        application.state.core = AppState.load()
+
     return application
 
 

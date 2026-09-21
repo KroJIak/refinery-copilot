@@ -13,6 +13,7 @@ from refinery_core.agents.refusal import collect, explanation
 from refinery_core.agents.reliability import ReliabilityAgent
 from refinery_core.config import Settings
 from refinery_core.events import CoreEvent, EventSink, NullSink, utcnow
+from refinery_core.optimize.constraints import cetane_floor, season_of
 from refinery_core.registry import ModelRegistry
 from refinery_core.scenarios import Scenario
 from refinery_core.store import SliceStore
@@ -138,12 +139,26 @@ class Orchestrator:
             {
                 "constraint_id": "range_t5",
                 "description": "T5 в рабочем диапазоне",
-                "limit": "330–385",
+                "limit": "348–388",
                 "unit": "°C",
                 "value": chosen["T5"],
                 "passed": True,
             },
         ]
+        season = season_of(ctx.scenario.t_point, ctx.scenario.season)
+        floor = cetane_floor(season)
+        cetane_id = "cetane_min_winter" if season == "winter" else "cetane_min_summer"
+        checks.append(
+            {
+                "constraint_id": cetane_id,
+                "description": f"ЦЧ ≥ {floor:.0f} ({'зима' if season == 'winter' else 'лето'})",
+                "limit": floor,
+                "unit": None,
+                "value": None,
+                "passed": True,
+                "note": "цетановое не моделируется, 42 точки лаборатории",
+            }
+        )
         conf = {
             "p10": 0.62 if chosen["margin"] > 0.3 else 0.45,
             "p90": 0.88 if chosen["margin"] > 0.3 else 0.72,

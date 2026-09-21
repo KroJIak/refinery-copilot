@@ -10,17 +10,17 @@ help: ## показать список целей
 .venv: ## окружение uv из lock
 	uv sync --group dev
 
-data: .venv ## инжест и чистка (ещё не подключены к CLI)
-	@echo "make data: пайплайн инжеста в этом срезе не вызывается. Сырьё уже в data/raw, quality-датасет в data/processed."
+data: .venv ## инжест: raw → data/processed/quality_datasets
+	uv run python -m refinery_core.cli data
 
-train: .venv ## обучение (бандлы уже зафиксированы)
-	@echo "make train: модели зафиксированы в artifacts/models. Повторный бустинг не нужен."
+train: .venv ## обучение зафиксированных бандлов → artifacts/models
+	uv run python -m refinery_core.cli train
 
 demo: .venv ## 4 демо-сценария, включая отказ bad_data
 	uv run python -m refinery_core.cli demo
 
-run: .venv ## uvicorn api (ещё не делаем)
-	@echo "API не в этом заходе"
+run: .venv ## api на :$(API_PORT)
+	uv run uvicorn app.main:app --app-dir backend/src --host 0.0.0.0 --port $(API_PORT)
 
 ui: .venv ## vite dev
 	cd frontend && npm run dev -- --port $(VITE_PORT)
@@ -37,5 +37,5 @@ up: ## docker compose
 down: ## остановить контейнеры
 	docker compose down
 
-mocks: ## фронт на моках
+mocks: ## поднять интерфейс без api
 	cd frontend && VITE_USE_MOCKS=true npm run dev

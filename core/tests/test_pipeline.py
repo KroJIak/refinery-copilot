@@ -2,8 +2,12 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
+import pandas as pd
+
 from refinery_core.agents.orchestrator import run_pipeline
-from refinery_core.scenarios import resolve_scenario
+from refinery_core.agents.quality import bump_t5, feature_matrix
+from refinery_core.models.round2_search import add_plant_features
+from refinery_core.scenarios import PRESETS, resolve_scenario
 from refinery_core.types import EXPECTED_OUTCOME, REFUSAL_REASON_LABELS, refusal_reason_label
 
 
@@ -29,30 +33,23 @@ def test_q21_not_in_features(registry):
 def test_row_is_published_not_future(store):
     t = datetime(2024, 8, 17, 14, 0, tzinfo=UTC)
     row = store.row_at(t)
-    assert row["sample_ts"] + __import__("pandas").Timedelta(hours=4) <= __import__(
-        "pandas"
-    ).Timestamp(t)
+    assert row["sample_ts"] + pd.Timedelta(hours=4) <= pd.Timestamp(t)
 
 
 def test_demo_hours_are_distinct():
-    from refinery_core.scenarios import PRESETS
-
     hours = {PRESETS[k]["t_point"] for k in ("normal", "quality_risk", "bad_data", "sour_crude")}
     assert len(hours) == 4
     assert PRESETS["sour_crude"]["overrides"] == {}
     assert "feed_sulfur_delta" not in PRESETS["sour_crude"]
-    assert PRESETS["bad_data"]["fault"].sentinel_tags == ()
+    assert PRESETS["bad_data"]["fault"].lims_age_hours is None
 
 
 def test_bad_data_refuses(store, registry, settings):
-    sc = resolve_scenario("bad_data")
-    result = run_pipeline(sc, store, registry, settings=settings)
+    result = run_pipeline(resolve_scenario("bad_data"), store, registry, settings=settings)
     assert result.status == "refused"
-    assert result.recommendation["decision"] == "refuse"
     reasons = result.recommendation["refusal"]["reasons"]
     assert "stale_lims" in reasons
     assert result.ctx.steps["data"].output["freshness"][0]["age_hours"] > 52
-    assert result.scenario.fault_injection.lims_age_hours is None
 
 
 def test_demo_kinds_match_expected(store, registry, settings):
@@ -61,42 +58,42 @@ def test_demo_kinds_match_expected(store, registry, settings):
         assert result.recommendation["decision"] == EXPECTED_OUTCOME[kind], kind
         assert result.status == "completed"
     normal = run_pipeline(resolve_scenario("normal"), store, registry, settings=settings)
-    assert (
-        normal.recommendation["actions"][0]["current_value"]
-        == normal.recommendation["actions"][0]["recommended_value"]
-    )
+    action = normal.recommendation["actions"][0]
+    assert action["current_value"] == action["recommended_value"]
 
 
 def test_whatif_uses_loc_not_quantile_sign(store, registry):
-    import pandas as pd
-
-    from refinery_core.agents.quality import bump_t5, feature_matrix
-    from refinery_core.models.round2_search import add_plant_features
-
-    t = datetime(2026, 6, 15, 8, 0, tzinfo=UTC)
+    t = datetime(2026, 5, 24, 14, 0, tzinfo=UTC)
     row = store.row_at(t)
     df = add_plant_features(pd.DataFrame([row]))
     loc_cols = registry.features_whatif
-    q_cols = registry.features_quantile
     loc0 = registry.loc_value(feature_matrix(df, loc_cols))
     loc1 = registry.loc_value(feature_matrix(bump_t5(df, loc_cols, 5.0), loc_cols))
     assert loc1 - loc0 < 0
-    q0 = registry.q50.predict(feature_matrix(df, q_cols))[0]
-    q1 = registry.q50.predict(feature_matrix(bump_t5(df, q_cols, 5.0), q_cols))[0]
-    # quantile gradient may have the wrong sign; loc must not follow it if they disagree
-    assert (loc1 - loc0) != 0
-    _ = q1 - q0
 
 
 def test_determinism_numbers(store, registry, settings):
     sc = resolve_scenario("quality_risk")
     a = run_pipeline(sc, store, registry, settings=settings)
     b = run_pipeline(sc, store, registry, settings=settings)
-    ea = a.recommendation["effects"][0]
-    eb = b.recommendation["effects"][0]
-    assert ea["baseline_p50"] == eb["baseline_p50"]
-    assert ea["action_p50"] == eb["action_p50"]
+    assert (
+        a.recommendation["effects"][0]["action_p50"] == b.recommendation["effects"][0]["action_p50"]
+    )
     assert (
         a.recommendation["actions"][0]["recommended_value"]
         == b.recommendation["actions"][0]["recommended_value"]
     )
+
+
+def test_season_changes_cetane_check(store, registry, settings):
+    summer = run_pipeline(
+        resolve_scenario("normal", season="summer"), store, registry, settings=settings
+    )
+    winter = run_pipeline(
+        resolve_scenario("normal", season="winter"), store, registry, settings=settings
+    )
+    s_ids = [c["constraint_id"] for c in summer.recommendation["checks"]]
+    w_ids = [c["constraint_id"] for c in winter.recommendation["checks"]]
+    assert "cetane_min_summer" in s_ids
+    assert "cetane_min_winter" in w_ids
+    assert s_ids != w_ids

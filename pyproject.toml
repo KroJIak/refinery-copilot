@@ -24,6 +24,7 @@ api = [
     "fastapi>=0.111",
     "uvicorn[standard]>=0.30",
     "sse-starlette>=2.1",
+    "pydantic-settings>=2.3",
 ]
 dev = [
     {include-group = "core"},
@@ -33,10 +34,11 @@ dev = [
 ]
 
 [tool.uv.workspace]
-members = ["core"]
+members = ["core", "backend"]
 
 [tool.uv.sources]
 refinery-core = { workspace = true }
+refinery-copilot-api = { workspace = true }
 
 [tool.pytest.ini_options]
 testpaths = ["core/tests"]

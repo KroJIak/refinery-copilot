@@ -7,6 +7,8 @@ dependencies = [
     "fastapi>=0.111",
     "uvicorn[standard]>=0.30",
     "pydantic-settings>=2.3",
+    "sse-starlette>=2.1",
+    "refinery-core",
 ]
 
 [build-system]

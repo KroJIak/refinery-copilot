@@ -29,6 +29,7 @@ class Scenario:
     overrides: dict[str, float]
     seed: int
     description: str
+    season: str = "auto"
     fault_injection: FaultInjection = field(default_factory=FaultInjection)
 
 
@@ -91,9 +92,12 @@ def resolve_scenario(
     t_point: datetime | None = None,
     overrides: dict[str, float] | None = None,
     seed: int = 42,
+    season: str = "auto",
 ) -> Scenario:
     if kind not in PRESETS:
         raise ValueError(f"unknown scenario {kind}")
+    if season not in {"auto", "summer", "winter"}:
+        raise ValueError(f"unknown season {season}")
     spec = PRESETS[kind]
     tp = t_point or spec["t_point"]
     if tp.tzinfo is None:
@@ -111,6 +115,7 @@ def resolve_scenario(
         overrides=ov,
         seed=seed,
         description=spec["description"],
+        season=season,
         fault_injection=spec["fault"],
     )
 
