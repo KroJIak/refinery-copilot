@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -324,7 +323,7 @@ def evaluate(y, p10, p50, p90) -> Eval:
         pinball90=pinball(y, p90, 0.9),
         spec_mae=spec_mae(y, mid),
         crossing=crossing_rate(p10, p50, p90),
-        n=int(len(y)),
+        n=len(y),
     )
 
 

@@ -19,12 +19,11 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_absolute_error
 
-from refinery_core.models.round2_search import PROCESS, PLANT_EXTRA, add_plant_features
+from refinery_core.models.round2_search import PLANT_EXTRA, PROCESS, add_plant_features
 from refinery_core.models.structure_search import (
     CAL_START,
     FEATURE_PACKS,
     HOLDOUT_START,
-    MONOTONE,
     SEED,
     conformalize,
     evaluate,
@@ -76,9 +75,7 @@ def fit_loc_mono(X: np.ndarray, y: np.ndarray, cols: list[str]) -> lgb.Booster:
     for c in cols:
         if c.startswith("T5_") and "std" not in c:
             mono.append(-1)
-        elif c.startswith("F26_") and "std" not in c and "inv" not in c and "recent" not in c:
-            mono.append(1)
-        elif c in {"cat_age_days", "feed_sulfur"}:
+        elif c.startswith("F26_") and "std" not in c and "inv" not in c and "recent" not in c or c in {"cat_age_days", "feed_sulfur"}:
             mono.append(1)
         else:
             mono.append(0)

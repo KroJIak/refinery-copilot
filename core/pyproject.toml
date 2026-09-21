@@ -1,0 +1,21 @@
+[project]
+name = "refinery-core"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "pydantic>=2.7",
+    "python-dotenv>=1.0",
+    "pandas>=2.2",
+    "pyarrow>=16",
+    "numpy>=1.26",
+    "lightgbm>=4.4",
+    "scikit-learn>=1.5",
+    "rich>=13.7",
+]
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]

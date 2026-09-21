@@ -5,10 +5,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import lightgbm as lgb
 import numpy as np
 import pandas as pd
-from sklearn.metrics import mean_absolute_error
 
 from refinery_core.models.structure_search import (
     CAL_START,
@@ -16,10 +14,8 @@ from refinery_core.models.structure_search import (
     HOLDOUT_START,
     SEED,
     conformalize,
-    coverage,
     evaluate,
     fit_lgb_quantile,
-    winkler,
 )
 
 DATA = Path("data/processed/quality_datasets/sulfur.parquet")
