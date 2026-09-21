@@ -27,11 +27,21 @@ def test_q21_not_in_features(registry):
 
 
 def test_row_is_published_not_future(store):
-    t = datetime(2024, 5, 15, 8, 0, tzinfo=UTC)
+    t = datetime(2024, 8, 17, 14, 0, tzinfo=UTC)
     row = store.row_at(t)
     assert row["sample_ts"] + __import__("pandas").Timedelta(hours=4) <= __import__(
         "pandas"
     ).Timestamp(t)
+
+
+def test_demo_hours_are_distinct():
+    from refinery_core.scenarios import PRESETS
+
+    hours = {PRESETS[k]["t_point"] for k in ("normal", "quality_risk", "bad_data", "sour_crude")}
+    assert len(hours) == 4
+    assert PRESETS["sour_crude"]["overrides"] == {}
+    assert "feed_sulfur_delta" not in PRESETS["sour_crude"]
+    assert PRESETS["bad_data"]["fault"].sentinel_tags == ()
 
 
 def test_bad_data_refuses(store, registry, settings):
@@ -41,7 +51,8 @@ def test_bad_data_refuses(store, registry, settings):
     assert result.recommendation["decision"] == "refuse"
     reasons = result.recommendation["refusal"]["reasons"]
     assert "stale_lims" in reasons
-    assert "sensor_fault" in reasons
+    assert result.ctx.steps["data"].output["freshness"][0]["age_hours"] > 52
+    assert result.scenario.fault_injection.lims_age_hours is None
 
 
 def test_demo_kinds_match_expected(store, registry, settings):

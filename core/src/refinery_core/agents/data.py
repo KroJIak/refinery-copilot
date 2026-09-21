@@ -10,6 +10,8 @@ from refinery_core.types import FreshnessStatus, freshness_status_label
 WARN_H = 28.0
 STALE_H = 52.0
 SUPPORT = ("T5", "F26")
+ANALYZER = "Q21"
+SENTINELS = (307.0, 251.0, 252.0, 240.0, 24.9)
 
 
 def _status(age: float | None) -> FreshnessStatus:
@@ -34,7 +36,9 @@ class DataAgent:
         sample_ts: datetime = row["sample_ts"].to_pydatetime()
         if sample_ts.tzinfo is None:
             sample_ts = sample_ts.replace(tzinfo=UTC)
-        age = (ctx.scenario.t_point - sample_ts).total_seconds() / 3600.0
+        published_age = (ctx.scenario.t_point - sample_ts).total_seconds() / 3600.0
+        gap = _num(row.get("lims_age_h"))
+        age = gap if gap is not None else published_age
         if fault.lims_age_hours is not None:
             age = float(fault.lims_age_hours)
 
@@ -46,11 +50,16 @@ class DataAgent:
                 for col in ctx.row.index:
                     if str(col).startswith(tag + "_") or str(col) == tag:
                         ctx.row[col] = float("nan")
+        q21 = _num(ctx.row.get("Q21_lag0"))
+        flags[ANALYZER] = "sentinel" if _is_sentinel(q21) else "ok"
+        if ANALYZER in fault.sentinel_tags:
+            flags[ANALYZER] = "sentinel"
 
         lims_status = _status(age)
-        sufficiency = "ok"
-        if lims_status in {"stale", "missing"} or any(flags[t] != "ok" for t in SUPPORT):
-            sufficiency = "insufficient"
+        key_bad = any(flags[t] != "ok" for t in (*SUPPORT, ANALYZER))
+        # Сентинел глушит фичи до прогноза. Старая лаборатория сама по себе
+        # прогноз не ломает: отказ ставит оркестратор по свежести.
+        sufficiency = "insufficient" if key_bad else "ok"
 
         slices = {
             "T5": _num(ctx.row.get("T5_lag0")),
@@ -62,6 +71,7 @@ class DataAgent:
             "prev_lims_sulfur": _num(ctx.row.get("prev_lims_sulfur")),
             "y_sulfur": _num(row.get("y_sulfur")),
             "t95": _num(row.get("t95_same_sample")),
+            "Q21": q21,
         }
         freshness = [
             {
@@ -111,6 +121,12 @@ class DataAgent:
         if sufficiency == "insufficient":
             ctx.skip_remaining = True
         return step
+
+
+def _is_sentinel(v: float | None) -> bool:
+    if v is None:
+        return True
+    return any(math.isclose(v, s, abs_tol=0.05) for s in SENTINELS)
 
 
 def _num(v) -> float | None:

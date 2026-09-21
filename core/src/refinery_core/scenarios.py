@@ -45,37 +45,38 @@ LABELS: dict[ScenarioKind, str] = {
     "stale_lims": "Старый ЛИМС",
 }
 
+# Часы подобраны по quality-датасету (момент = проба + 4 ч публикации).
+# Подмен сырья и датчиков нет. У bad_data лаборатория в архиве уже старше порога.
 PRESETS: dict[ScenarioKind, dict[str, Any]] = {
     "normal": {
-        "t_point": datetime(2024, 5, 15, 8, 0, tzinfo=UTC),
+        "t_point": datetime(2024, 8, 17, 14, 0, tzinfo=UTC),
         "overrides": {},
-        "description": "Устойчивый режим, свежая лаборатория",
+        "description": "17.08.2024, сера пробы 6.7, лаборатория свежая",
         "fault": FaultInjection(),
     },
     "quality_risk": {
-        "t_point": datetime(2026, 6, 15, 8, 0, tzinfo=UTC),
+        "t_point": datetime(2026, 5, 24, 14, 0, tzinfo=UTC),
         "overrides": {},
-        "description": "Сера у границы 10 мг/кг",
+        "description": "24.05.2026, сера пробы 9.5 у нормы 10",
         "fault": FaultInjection(),
     },
     "bad_data": {
-        "t_point": datetime(2026, 6, 15, 8, 0, tzinfo=UTC),
+        "t_point": datetime(2026, 4, 27, 19, 30, tzinfo=UTC),
         "overrides": {},
-        "description": "Сентинелы в T5/F26 и устаревший ЛИМС",
-        "fault": FaultInjection(sentinel_tags=("T5", "F26"), lims_age_hours=60.0),
+        "description": "27.04.2026, предыдущая проба 317 ч назад",
+        "fault": FaultInjection(),
     },
     "sour_crude": {
-        "t_point": datetime(2026, 6, 15, 8, 0, tzinfo=UTC),
-        "overrides": {"blend_share_kerosene": 0.12},
-        "description": "Выше сера сырья",
+        "t_point": datetime(2025, 5, 20, 14, 0, tzinfo=UTC),
+        "overrides": {},
+        "description": "20.05.2025, сера сырья 1.057, проба продукта 11.3",
         "fault": FaultInjection(),
-        "feed_sulfur_delta": 0.4,
     },
     "stale_lims": {
-        "t_point": datetime(2026, 6, 1, 12, 0, tzinfo=UTC),
+        "t_point": datetime(2026, 7, 2, 16, 0, tzinfo=UTC),
         "overrides": {},
-        "description": "Только устаревший ЛИМС",
-        "fault": FaultInjection(lims_age_hours=60.0),
+        "description": "02.07.2026, предыдущая проба 350 ч назад",
+        "fault": FaultInjection(),
     },
 }
 

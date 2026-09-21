@@ -19,7 +19,7 @@ def collect(ctx: RunContext) -> tuple[list[RefusalReason], list[str]]:
         bad = [k for k, v in flags.items() if v != "ok"]
         if bad:
             reasons.append("sensor_fault")
-            details.append("Ключевые каналы неисправны: " + ", ".join(bad))
+            details.append("Каналы с заглушкой или без числа: " + ", ".join(bad))
     opt = ctx.steps.get("optimization")
     quality = ctx.steps.get("quality")
     no_variant = opt is not None and opt.output.get("n_feasible") == 0
