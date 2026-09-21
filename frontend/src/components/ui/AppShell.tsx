@@ -9,7 +9,7 @@ import './AppShell.css';
 const navigation = [
   { label: 'Обзор', to: '/' },
   { label: 'Сценарии', to: '/recommendation' },
-  { label: 'What-if', to: '/whatif' },
+  { label: 'Что если', to: '/whatif' },
   { label: 'Мнемосхема', to: '/mnemonic' },
   { label: 'Модели', to: '/models' },
   { label: 'Отчёты', to: '/data' },
@@ -23,7 +23,7 @@ function formatAge(ageHours: number | null): string {
 function FreshnessPill({ source, onClick }: { source: 'lims' | 'pak'; onClick: () => void }) {
   const entries = useAppStore((store) => store.freshness);
   const entry = entries.find((item) => item.source === source && /sulfur|sulphur|sulph|s\.s|сера/i.test(item.pointId)) ?? entries.find((item) => item.source === source);
-  return <Tooltip content={entry ? `Возраст ${entry.ageHours ?? '—'} ч · порог warn ${entry.warnAfterH} · stale ${entry.staleAfterH}` : 'Данные о свежести отсутствуют'}><button className="freshness-pill" data-status={entry?.status ?? 'missing'} onClick={onClick}>
+  return <Tooltip content={entry ? `Возраст ${entry.ageHours ?? '—'} ч · предупреждение после ${entry.warnAfterH} ч · устаревание после ${entry.staleAfterH} ч` : 'Данные о свежести отсутствуют'}><button className="freshness-pill" data-status={entry?.status ?? 'missing'} onClick={onClick}>
     {source === 'lims' ? 'ЛИМС' : 'ПАК'} {entry ? `${formatAge(entry.ageHours)} ч` : '—'}
   </button></Tooltip>;
 }
@@ -41,7 +41,7 @@ export function AppShell({ children }: { children?: ReactNode }) {
     <header className="app-header">
       <div className="app-brand-group">
         <NavLink className="app-brand" to="/" aria-label="Refinery Copilot, обзор">Refinery Copilot</NavLink>
-        {USE_MOCKS && <span className="mock-badge">mock</span>}
+        {USE_MOCKS && <span className="mock-badge">демо-режим</span>}
       </div>
       <div className="app-freshness">
         <FreshnessPill source="lims" onClick={() => navigate('/data')} />

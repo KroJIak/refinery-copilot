@@ -1,0 +1,87 @@
+{
+  "normal": {
+    "variation": 0.45,
+    "controls": {
+      "24-2000.P8": 341.2,
+      "24-2000.T11": 208,
+      "24-2000.F19": 4.2,
+      "crude_feed_rate_tph": 899.5,
+      "avt_furnace_outlet_temp_c": 368,
+      "avt_column_pressure_mpa_abs": 0.8,
+      "blend_share_kerosene": 0.12,
+      "blend_share_gasoil": 0.24,
+      "blend_additive_pct": 0
+    },
+    "extras": { "Q21": 8.7, "T5": 366, "T6": 364, "T55": 361, "F65": 887, "W70": 0.11, "P22": 0.78, "P13": 4.1, "F26": 242, "T18": 96.5, "Q20": 8.8, "W4": 1.8, "W10": 1.6, "pak_sulfur": 8.8, "pak_d15": 832, "lims_sulfur": 8.7, "lims_cetane": 52.2, "blend_cetane": 52.2, "blend_t95": 353.8 },
+    "quality": { "sulfur": 8.2, "t95": 353.8, "cetane": 52.2 },
+    "freshness": { "limsAgeHours": 5.2, "pakAgeHours": 0.2, "d15AgeHours": 18 }
+  },
+  "quality_risk": {
+    "variation": 0.85,
+    "controls": {
+      "24-2000.P8": 358.2,
+      "24-2000.T11": 221,
+      "24-2000.F19": 4.7,
+      "crude_feed_rate_tph": 914,
+      "avt_furnace_outlet_temp_c": 374,
+      "avt_column_pressure_mpa_abs": 0.86,
+      "blend_share_kerosene": 0.14,
+      "blend_share_gasoil": 0.25,
+      "blend_additive_pct": 0.4
+    },
+    "extras": { "Q21": 9.6, "T5": 374, "T6": 371, "T55": 369, "F65": 915, "W70": 0.13, "P22": 0.84, "P13": 4.6, "F26": 256, "T18": 99.1, "Q20": 9.5, "W4": 2.2, "W10": 2.1, "pak_sulfur": 9.6, "pak_d15": 839, "lims_sulfur": 9.5, "lims_cetane": 51.3, "blend_cetane": 51.3, "blend_t95": 357.2 },
+    "quality": { "sulfur": 9.5, "t95": 357.2, "cetane": 51.3 },
+    "freshness": { "limsAgeHours": 22, "pakAgeHours": 1.2, "d15AgeHours": 32 }
+  },
+  "sour_crude": {
+    "variation": 1.2,
+    "controls": {
+      "24-2000.P8": 342.9,
+      "24-2000.T11": 252,
+      "24-2000.F19": 4,
+      "crude_feed_rate_tph": 1040,
+      "avt_furnace_outlet_temp_c": 379,
+      "avt_column_pressure_mpa_abs": 0.92,
+      "blend_share_kerosene": 0.08,
+      "blend_share_gasoil": 0.28,
+      "blend_additive_pct": 1.5
+    },
+    "extras": { "Q21": 12.8, "T5": 379, "T6": 376, "T55": 373, "F65": 1044, "W70": 0.19, "P22": 0.91, "P13": 4, "F26": 274, "T18": 104.2, "Q20": 12.2, "W4": 3.1, "W10": 2.8, "pak_sulfur": 12.5, "pak_d15": 842, "lims_sulfur": 12.8, "lims_cetane": 49.6, "blend_cetane": 50.2, "blend_t95": 362.4 },
+    "quality": { "sulfur": 11.8, "t95": 362.4, "cetane": 49.7 },
+    "freshness": { "limsAgeHours": 6.5, "pakAgeHours": 0.5, "d15AgeHours": 21 }
+  },
+  "bad_data": {
+    "variation": 0.7,
+    "controls": {
+      "24-2000.P8": 341.2,
+      "24-2000.T11": 208,
+      "24-2000.F19": 4.2,
+      "crude_feed_rate_tph": 899.5,
+      "avt_furnace_outlet_temp_c": 368,
+      "avt_column_pressure_mpa_abs": 0.8,
+      "blend_share_kerosene": 0.12,
+      "blend_share_gasoil": 0.24,
+      "blend_additive_pct": 0
+    },
+    "extras": { "Q21": null, "T5": 371, "T6": 369, "T55": 365, "F65": null, "W70": null, "P22": 0.8, "P13": 4.2, "F26": null, "T18": null, "Q20": null, "W4": null, "W10": null, "pak_sulfur": null, "pak_d15": null, "lims_sulfur": null, "lims_cetane": null, "blend_cetane": null, "blend_t95": null },
+    "quality": { "sulfur": 9.8, "t95": 358.2, "cetane": 50.4 },
+    "freshness": { "limsAgeHours": null, "pakAgeHours": null, "d15AgeHours": null }
+  },
+  "stale_lims": {
+    "variation": 0.55,
+    "controls": {
+      "24-2000.P8": 346.5,
+      "24-2000.T11": 214,
+      "24-2000.F19": 4.4,
+      "crude_feed_rate_tph": 905,
+      "avt_furnace_outlet_temp_c": 370,
+      "avt_column_pressure_mpa_abs": 0.82,
+      "blend_share_kerosene": 0.13,
+      "blend_share_gasoil": 0.24,
+      "blend_additive_pct": 0.2
+    },
+    "extras": { "Q21": 9.2, "T5": 369, "T6": 367, "T55": 364, "F65": 902, "W70": 0.12, "P22": 0.81, "P13": 4.3, "F26": 249, "T18": 98, "Q20": 9, "W4": 2, "W10": 1.8, "pak_sulfur": 9.1, "pak_d15": 836, "lims_sulfur": 9.2, "lims_cetane": 51.5, "blend_cetane": 51.5, "blend_t95": 355.8 },
+    "quality": { "sulfur": 9.2, "t95": 355.8, "cetane": 51.5 },
+    "freshness": { "limsAgeHours": 54, "pakAgeHours": 0.4, "d15AgeHours": 30 }
+  }
+}

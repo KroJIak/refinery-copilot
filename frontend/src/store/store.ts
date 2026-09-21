@@ -20,6 +20,7 @@ import type {
   WhatifResponse,
 } from "@/types";
 import { api, setScenarioContext, subscribeRunEvents } from "@/mocks";
+import { userMessage } from "@/services/userMessage";
 
 export interface AppStore {
   state: StateResponse | null;
@@ -132,7 +133,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         .getHealth()
         .then((health) => set({ health }))
         .catch((e) =>
-          set({ error: e instanceof Error ? e.message : "Сервис недоступен" }),
+          set({ error: userMessage(e, "Сервис недоступен") }),
         ),
     ]).then(async () => {
       if (get().reportLoading || get().runId) {
@@ -181,7 +182,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       set({
         loading: false,
         error:
-          e instanceof Error ? e.message : "Не удалось загрузить состояние",
+          userMessage(e, "Не удалось загрузить состояние"),
       });
     }
   },
@@ -203,7 +204,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         scenariosLoading: false,
         scenarios: kinds.map((kind) => ({
           kind,
-          label: kind,
+          label: ({ normal: "Норма", quality_risk: "Риск по качеству", sour_crude: "Сернистая нефть", bad_data: "Плохие данные", stale_lims: "Устаревший ЛИМС" } as Record<ScenarioKind, string>)[kind],
           description: "",
           tPoint: get().tPoint ?? "",
           overrides: {},
@@ -229,7 +230,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     } catch (e) {
       set({
         modelsLoading: false,
-        modelsError: e instanceof Error ? e.message : "Failed to load models",
+        modelsError: userMessage(e, "Не удалось загрузить модели"),
       });
     }
   },
@@ -241,7 +242,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     } catch (e) {
       set({
         runsLoading: false,
-        error: e instanceof Error ? e.message : "Failed to load runs",
+        error: userMessage(e, "Не удалось загрузить историю прогонов"),
       });
     }
   },
@@ -293,7 +294,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       if (version !== reportVersion) return;
       set({
         reportLoading: false,
-        reportError: e instanceof Error ? e.message : "Прогон не найден",
+        reportError: userMessage(e, "Прогон не найден"),
       });
     }
   },
@@ -360,7 +361,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
               runStatus: "failed",
               status: "failed",
               errorCode: p.errorCode,
-              error: p.message,
+              error: userMessage(new Error(p.message), "Прогон завершился с ошибкой. Повторите попытку."),
             }),
         },
       });
@@ -369,7 +370,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         set({
           runStatus: "failed",
           status: "failed",
-          error: e instanceof Error ? e.message : "Ошибка прогона",
+          error: userMessage(e, "Ошибка прогона"),
         });
     }
   },
@@ -412,7 +413,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       if (version !== whatifVersion || controller.signal.aborted) return;
       set({
         whatifLoading: false,
-        whatifError: e instanceof Error ? e.message : "Ошибка расчёта",
+        whatifError: userMessage(e, "Ошибка расчёта"),
       });
     }
   },

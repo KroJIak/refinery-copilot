@@ -1,4 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
+import {
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Circle,
+  CircleAlert,
+  LoaderCircle,
+} from "lucide-react";
 import type {
   AgentRole,
   AgentStep,
@@ -125,12 +133,12 @@ export function AgentPipeline({
             >
               <span className="agent-node__status" aria-hidden="true">
                 {node.status === "done"
-                  ? "✓"
+                  ? <Check />
                   : node.status === "running"
-                    ? "⠙"
+                    ? <LoaderCircle className="agent-node__spinner" />
                     : node.status === "failed"
-                      ? "!"
-                      : "○"}
+                      ? <CircleAlert />
+                      : <Circle />}
               </span>
               <span>{node.label}</span>
               <span className="agent-node__duration">
@@ -142,7 +150,7 @@ export function AgentPipeline({
               </span>
               {variant === "full" && (
                 <span className="agent-node__chevron">
-                  {isExpanded ? "⌃" : "⌄"}
+                  {isExpanded ? <ChevronUp /> : <ChevronDown />}
                 </span>
               )}
             </NodeHeader>
