@@ -176,7 +176,9 @@ function evaluate(req: WhatifRequest): WhatifResponse {
       const gasoil = overrides.blend_share_gasoil ?? 0.24;
       const sulfur = round(
         9.6 +
-          delta * 0.3 +
+          // Expert sensitivity: raising the reactor inlet temperature lowers
+          // sulfur by about 0.3 mg/kg per °C.
+          delta * -0.3 +
           ((overrides["24-2000.T11"] ?? 208) - 208) * 0.004 -
           ((overrides["24-2000.F19"] ?? 4.2) - 4.2) * 0.8,
       );
@@ -298,7 +300,9 @@ function snapshot(
       source: "lims",
       lastSampleTs: tPoint,
       availableTs: tPoint,
-      ageHours: 1.2,
+      // Age is measured from sampling. Four hours later the LIMS result becomes
+      // available, so this sample is usable at tPoint without future leakage.
+      ageHours: 5.2,
       status: "ok",
       warnAfterH: 28,
       staleAfterH: 52,
@@ -310,6 +314,26 @@ function snapshot(
       availableTs: tPoint,
       ageHours: 0.2,
       status: "ok",
+      warnAfterH: 28,
+      staleAfterH: 52,
+    },
+    {
+      pointId: "hdu_product_d15",
+      source: "pak",
+      lastSampleTs: tPoint,
+      availableTs: tPoint,
+      ageHours: 32,
+      status: "warn",
+      warnAfterH: 28,
+      staleAfterH: 52,
+    },
+    {
+      pointId: "blend_product_cetane",
+      source: "lims",
+      lastSampleTs: null,
+      availableTs: null,
+      ageHours: null,
+      status: "missing",
       warnAfterH: 28,
       staleAfterH: 52,
     },
@@ -355,7 +379,9 @@ function snapshot(
       item.lastSampleTs = new Date(
         Date.parse(tPoint) - item.ageHours * 3600000,
       ).toISOString();
-      item.availableTs = item.lastSampleTs;
+      item.availableTs = item.source === "lims"
+        ? new Date(Date.parse(item.lastSampleTs) + 4 * 3600000).toISOString()
+        : item.lastSampleTs;
     }
   }
   const history: TagPoint[] = tags.flatMap((tag) => {

@@ -192,8 +192,8 @@ export const normalReport = {
         "tag": "24-2000.P8",
         "unit": "°C",
         "currentValue": 341.2,
-        "recommendedValue": 339.5,
-        "deltaPct": -0.5
+        "recommendedValue": 342.9,
+        "deltaPct": 0.5
       }
     ],
     "effects": [
@@ -237,7 +237,7 @@ export const normalReport = {
       "p10": 0.62,
       "p90": 0.88
     },
-    "explanation": "Снижение T ГСС на 1,7 °C уменьшает серу ~0,5 мг/кг (санити ~0,3 мг/кг/°C) и снимает риск off-spec; запас по T95 и ЦЧ сохраняется.",
+    "explanation": "Повышение температуры входа Р-202 на 1,7 °C уменьшает серу примерно на 0,5 мг/кг (санити: около 0,3 мг/кг/°C) и снимает риск off-spec; запас по T95 и ЦЧ сохраняется.",
     "alternatives": [
       {
         "label": "Присадка 1,5 %",
@@ -287,7 +287,7 @@ export const whatifResult = {
   "variants": [
     {
       "overrides": {
-        "24-2000.P8": 339.5
+        "24-2000.P8": 342.9
       },
       "quality": [
         {
@@ -305,7 +305,7 @@ export const whatifResult = {
     },
     {
       "overrides": {
-        "24-2000.P8": 336,
+        "24-2000.P8": 345,
         "blend_additive_pct": 1.5
       },
       "quality": [

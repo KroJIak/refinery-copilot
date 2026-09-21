@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react';
 import { useAppStore } from '@/store/store';
 import { TimeSeriesChart } from '@/components/charts/TimeSeriesChart';
+import { archivalCoverage, coverageWindow } from './coverageFacts';
 import './ReporterPage.css';
 
 const flagLabel: Record<string, string> = { sentinel: 'сентинел', stuck: 'залипание', outlier: 'зашкал', missing: 'нет данных' };
 const statusLabel: Record<string, string> = { ok: 'свежие', warn: 'внимание', stale: 'устарели', missing: 'нет данных' };
 const date = (value: string | null) => value ? new Date(value).toLocaleString('ru-RU', { timeZone: 'UTC' }) + ' UTC' : 'нет данных';
+const coverageOffset = (value: string) => (Date.parse(value) - Date.parse(coverageWindow.from)) / (Date.parse(coverageWindow.to) - Date.parse(coverageWindow.from)) * 100;
 
 export function ReporterPage() {
   const { tags, freshness, tPoint, loadState, loading, error } = useAppStore();
@@ -13,10 +15,6 @@ export function ReporterPage() {
   const problems = useMemo(() => Array.from(new Map(tags.filter((tag) => tag.qualityFlag !== 'ok').map((tag) => [tag.tagCode, tag])).values()), [tags]);
   const selectedTag = tags.filter((tag) => tag.tagCode === selected).at(-1);
   const selectedSeries = tags.filter((tag) => tag.tagCode === selected);
-  const coverage = useMemo(() => ['kip', 'pak', 'lims', 'vak'].map((source) => {
-    const points = tags.filter((tag) => tag.source === source).sort((a,b) => a.ts.localeCompare(b.ts));
-    return { source, from: points[0]?.ts, to: points.at(-1)?.ts, count: points.length };
-  }), [tags]);
   return <main className="reporter-page">
     <header className="reporter-head"><div><h1>Отчёты о данных</h1><p>{date(tPoint)} · {freshness.length} источников · {problems.length} проблемных тегов</p></div><button className="model-download" onClick={() => void loadState({ tPoint: tPoint ?? undefined })}>Обновить</button></header>
     {error && <div role="alert" className="reporter-empty">{error}</div>}
@@ -28,6 +26,6 @@ export function ReporterPage() {
       return <tr key={tag.tagCode}><td>{tag.tagCode}</td><td><span className={`flag-badge ${tag.qualityFlag}`}>{flagLabel[tag.qualityFlag]}</span></td><td>{(share * 100).toLocaleString('ru-RU', { maximumFractionDigits: 1 })} % среза</td><td>{tag.value == null ? 'Маска в null' : 'Пометка качества ряда'}</td><td><button className="model-download" onClick={() => setSelected(selected === tag.tagCode ? null : tag.tagCode)}>График</button></td></tr>;
     })}</tbody></table></div> : !loading && <p className="reporter-note">На выбранном срезе находок нет.</p>}
     {selectedTag && <div className="reporter-detail"><div className="reporter-head"><h3>{selectedTag.tagCode} · {selectedTag.unit ?? '—'}</h3><button className="model-download" aria-label="Закрыть график" onClick={() => setSelected(null)}>×</button></div><TimeSeriesChart height={220} series={[{ tagCode: selectedTag.tagCode, label: selectedTag.tagCode, unit: selectedTag.unit ?? '', points: selectedSeries, kind: selectedTag.source === 'lims' ? 'lims_fact' : 'telemetry' }]} /></div>}</section>
-    <section className="reporter-card" style={{ marginTop: 16 }}><h2>Покрытие загруженного среза</h2><table className="reporter-table"><thead><tr><th>Источник</th><th>Начало</th><th>Конец</th><th>Точек</th></tr></thead><tbody>{coverage.map((source) => <tr key={source.source}><td>{source.source.toUpperCase()}</td><td>{date(source.from ?? null)}</td><td>{date(source.to ?? null)}</td><td>{source.count}</td></tr>)}</tbody></table><p className="reporter-note">Архивное покрытие ПАК D15 начинается с марта 2025. Более ранний пустой участок не означает неисправность. Коды КИП в справочнике и данных расходятся; страница это не исправляет.</p></section>
+    <section className="reporter-card reporter-coverage" style={{ marginTop: 16 }}><h2>Покрытие источников</h2><p className="reporter-coverage__years" aria-hidden="true"><span>2023</span><span>2024</span><span>2025</span><span>2026</span></p><div className="coverage-list">{archivalCoverage.map((source) => { const start = coverageOffset(source.from); const end = coverageOffset(source.to); return <div className="coverage-row" key={source.id}><strong>{source.label}</strong><div className={`coverage-track coverage-track--${source.pattern}`} aria-label={`${source.label}: ${source.note}`}><i style={{ left: `${start}%`, width: `${end - start}%` }} /></div><small>{source.note}</small></div>; })}</div><p className="reporter-note">Это подтверждённое покрытие архива, а не диапазон текущего короткого среза. Коды КИП в справочнике и данных расходятся; страница это не исправляет.</p></section>
   </main>;
 }
