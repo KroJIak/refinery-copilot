@@ -100,7 +100,7 @@ flowchart LR
 | 4 | `03-sync-freshness` | выравнивание только по времени; анти-утечка ЛИМС ≤ 4 ч; `DataFreshness` |
 | 5 | `04-anomaly-params` | офлайн-фит Hampel + PCA T²/SPE, экспорт порогов |
 | 6 | `05-features` | окна, лаги 0–3 ч, возраст ЛИМС, наработка катализатора, сезон |
-| 7 | `06-train-quantile` | LightGBM `objective=quantile`, `monotone_constraints`, цели sulfur/t95/d15/cetane |
+| 7 | `06-train-quantile` | сера: 3× quantile + L2-локализатор what-if; T95 бейзлайн последней пробы; ЦЧ без бустера |
 | 8 | `07-conformal-calibration` | MAPIE (EnbPI/ACI), ширина интервала как сигнал отказа |
 | 9 | `08-validation-timesplit` | TimeSeriesSplit с gap ≥ 3 ч, holdout 2026, `metrics.json` |
 | 10 | `09-publish-registry` | запись `artifacts/models/{target}/` (P5, сторона производителя) |

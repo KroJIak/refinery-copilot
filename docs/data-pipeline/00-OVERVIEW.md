@@ -76,8 +76,11 @@ flowchart LR
 | 4 | [[03-sync-freshness]] | выравнивание по времени; анти-утечка ЛИМС ≤ 4 ч; ПАК; freshness-таблица | канон [[02-data-freshness]] |
 | 5 | [[04-anomaly-params]] | офлайн-фит Hampel + PCA T²/SPE; экспорт порогов в artifacts | core-architecture/03-agent-data, data-store/06 |
 | 6 | [[05-features]] | окна, лаги 0–18 шагов, возраст ЛИМС/ПАК, наработка, сезон, ВАК T50/T90 | признаки, правила источника качества |
-
-Файлы 06–10 (`06-train-quantile` … `10-tests`) продолжают нумерацию и принадлежат тому же домену.
+| 7 | [[06-train-quantile]] | сера: 3× quantile + L2 what-if; T95 persistence; ЦЧ без бустера | [[05-features]], [[07-conformal-calibration]] |
+| 8 | [[07-conformal-calibration]] | CQR поверх P10–P90 | [[06-train-quantile]] |
+| 9 | [[08-validation-timesplit]] | TimeSeriesSplit, gap, holdout 2026 | [[06-train-quantile]] |
+| 10 | [[09-publish-registry]] | запись артефактов в `artifacts/models/` | P5 |
+| 11 | [[10-tests]] | сентинелы, анти-утечка, детерминизм | весь пайплайн |
 
 ## 4. Правила дизайна (обязательны для всех файлов домена)
 

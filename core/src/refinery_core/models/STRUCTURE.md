@@ -1,5 +1,7 @@
 # Структура моделей качества
 
+Полный путь выбора, все попытки и цифры: `docs/internal/research/05-model-selection.md`.
+
 Офлайн, без API и CLI. Метка серы: ЛИМС гидроочистка отбор 2, `Mg.Sulfur`. Анти-утечка: фичи до `sample_ts`. Сплит: train до 2026-01-01 (1206), калибровка 2026 H1 (206), holdout с 2026-07-01 (47). Seed 42. Q21 в advisory-фичи не входит.
 
 Заводская практика, на которую опирались: soft sensor / inferential (PLS, DPLS, GBDT), окно телеметрии до пробы, банк лагов вместо LSTM, возраст катализатора, CQR/EnbPI без обменнимости, advisory open-loop а не MPC. Источники в `docs/internal/research/02-industry-practices.md`.
