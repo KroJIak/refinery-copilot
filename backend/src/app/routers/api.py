@@ -73,13 +73,14 @@ def _valid_overrides(value: object) -> dict[str, float]:
     unknown = set(value) - allowed
     if unknown:
         raise ValueError("неуправляемые параметры: " + ", ".join(sorted(unknown)))
-    result: dict[str, float] = {}
-    for key, raw in value.items():
-        number = _finite(raw)
-        if number is None:
-            raise ValueError(f"некорректное значение {key}")
-        result[key] = number
-    return result
+    return {key: _validated_number(key, raw) for key, raw in value.items()}
+
+
+def _validated_number(key: str, value: object) -> float:
+    number = _finite(value)
+    if number is None:
+        raise ValueError(f"некорректное значение {key}")
+    return number
 
 
 class _T95Ctx:
