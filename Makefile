@@ -29,11 +29,11 @@ train: .venv ## обучение зафиксированных бандлов �
 demo: .venv ## 4 демо-сценария, включая отказ bad_data
 	uv run python -m refinery_core.cli demo
 
-run: .venv ## api на :$(API_PORT), другой порт: make run PORT=8001
+run: .venv ## запустить сервер на порту 8000. если занят: make run PORT=8001
 	$(call require-free-port,$(api_port),run)
 	uv run uvicorn app.main:app --app-dir backend/src --host 0.0.0.0 --port $(api_port)
 
-ui: .venv ## сайт на :$(VITE_PORT), другой порт: make ui PORT=5174
+ui: .venv ## открыть сайт на порту 5173. если занят: make ui PORT=5174
 	$(call require-free-port,$(ui_port),ui)
 	cd frontend && npm run dev -- --port $(ui_port) --strictPort
 
