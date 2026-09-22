@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { X } from 'lucide-react';
 import { useAppStore } from '@/store/store';
 import { TimeSeriesChart } from '@/components/charts/TimeSeriesChart';
 import { archivalCoverage, coverageWindow } from './coverageFacts';
@@ -6,6 +7,7 @@ import './ReporterPage.css';
 
 const flagLabel: Record<string, string> = { sentinel: 'сентинел', stuck: 'залипание', outlier: 'зашкал', missing: 'нет данных' };
 const statusLabel: Record<string, string> = { ok: 'свежие', warn: 'внимание', stale: 'устарели', missing: 'нет данных' };
+const pointLabels: Record<string, string> = { hdu_product_sulfur: 'Сера продукта гидроочистки', blend_product_cn: 'Цетановое число товарного продукта', blend_product_t95: 'T95 товарного продукта', blend_product_d15: 'Плотность D15 товарного продукта' };
 const date = (value: string | null) => value ? new Date(value).toLocaleString('ru-RU', { timeZone: 'UTC' }) + ' UTC' : 'нет данных';
 const coverageOffset = (value: string) => (Date.parse(value) - Date.parse(coverageWindow.from)) / (Date.parse(coverageWindow.to) - Date.parse(coverageWindow.from)) * 100;
 
@@ -23,9 +25,9 @@ export function ReporterPage() {
     <section className="reporter-card" style={{ marginTop: 16 }}><h2>Проблемные теги</h2>{problems.length ? <div style={{ overflowX: 'auto' }}><table className="reporter-table"><thead><tr><th>Тег</th><th>Проблема</th><th>Доля точек с флагом</th><th>Обработка</th><th /></tr></thead><tbody>{problems.map((tag) => {
       const all = tags.filter((p) => p.tagCode === tag.tagCode);
       const share = all.filter((p) => p.qualityFlag !== 'ok').length / all.length;
-      return <tr key={tag.tagCode}><td>{tag.tagCode}</td><td><span className={`flag-badge ${tag.qualityFlag}`}>{flagLabel[tag.qualityFlag]}</span></td><td>{(share * 100).toLocaleString('ru-RU', { maximumFractionDigits: 1 })} % среза</td><td>{tag.value == null ? 'Маска в null' : 'Пометка качества ряда'}</td><td><button className="model-download" onClick={() => setSelected(selected === tag.tagCode ? null : tag.tagCode)}>График</button></td></tr>;
+      return <tr key={tag.tagCode}><td>{pointLabels[tag.tagCode] ?? 'Контрольная точка'} <small>({tag.tagCode})</small></td><td><span className={`flag-badge ${tag.qualityFlag}`}>{flagLabel[tag.qualityFlag]}</span></td><td>{(share * 100).toLocaleString('ru-RU', { maximumFractionDigits: 1 })} % среза</td><td>{tag.value == null ? 'Маска в null' : 'Пометка качества ряда'}</td><td><button className="model-download" onClick={() => setSelected(selected === tag.tagCode ? null : tag.tagCode)}>График</button></td></tr>;
     })}</tbody></table></div> : !loading && <p className="reporter-note">На выбранном срезе находок нет.</p>}
-    {selectedTag && <div className="reporter-detail"><div className="reporter-head"><h3>{selectedTag.tagCode} · {selectedTag.unit ?? '—'}</h3><button className="model-download" aria-label="Закрыть график" onClick={() => setSelected(null)}>×</button></div><TimeSeriesChart height={220} series={[{ tagCode: selectedTag.tagCode, label: selectedTag.tagCode, unit: selectedTag.unit ?? '', points: selectedSeries, kind: selectedTag.source === 'lims' ? 'lims_fact' : 'telemetry' }]} /></div>}</section>
+    {selectedTag && <div className="reporter-detail"><div className="reporter-head"><h3>{pointLabels[selectedTag.tagCode] ?? 'Контрольная точка'} · {selectedTag.unit ?? '—'}</h3><button className="model-download" aria-label="Закрыть график" onClick={() => setSelected(null)}><X aria-hidden="true" /></button></div><TimeSeriesChart height={220} series={[{ tagCode: selectedTag.tagCode, label: pointLabels[selectedTag.tagCode] ?? selectedTag.tagCode, unit: selectedTag.unit ?? '', points: selectedSeries, kind: selectedTag.source === 'lims' ? 'lims_fact' : 'telemetry' }]} /></div>}</section>
     <section className="reporter-card reporter-coverage" style={{ marginTop: 16 }}><h2>Покрытие источников</h2><p className="reporter-coverage__years" aria-hidden="true"><span>2023</span><span>2024</span><span>2025</span><span>2026</span></p><div className="coverage-list">{archivalCoverage.map((source) => { const start = coverageOffset(source.from); const end = coverageOffset(source.to); return <div className="coverage-row" key={source.id}><strong>{source.label}</strong><div className={`coverage-track coverage-track--${source.pattern}`} aria-label={`${source.label}: ${source.note}`}><i style={{ left: `${start}%`, width: `${end - start}%` }} /></div><small>{source.note}</small></div>; })}</div><p className="reporter-note">Это подтверждённое покрытие архива, а не диапазон текущего короткого среза. Коды КИП в справочнике и данных расходятся; страница это не исправляет.</p></section>
   </main>;
 }

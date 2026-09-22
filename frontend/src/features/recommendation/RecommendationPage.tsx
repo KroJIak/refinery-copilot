@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowRight, CircleAlert, CircleCheck, CircleX, FileText, LoaderCircle, TriangleAlert } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAppStore } from "@/store";
 import { AgentPipeline } from "@/components/agents/AgentPipeline";
@@ -17,6 +18,7 @@ import "../dashboard/primary.css";
 const thresholds = [
   { kind: "spec_max" as const, value: 10, label: "10 мг/кг" },
 ];
+const versionLabels: Record<string, string> = { python: "Python", lightgbm: "LightGBM", core: "Версия ядра", contract: "Версия контракта" };
 const date = (value: string) =>
   new Date(value).toLocaleString("ru-RU", {
     timeZone: "UTC",
@@ -161,7 +163,7 @@ export function RecommendationPage() {
             )}
             {failed && (
               <div className="status-banner status-banner--error" role="alert">
-                {store.errorCode} · {store.error}
+                {store.error}
                 <button className="text-button" onClick={retry}>
                   Повторить
                 </button>
@@ -200,7 +202,7 @@ export function RecommendationPage() {
                         })}
                       </time>
                       <span>
-                        {entry.level === "warn" && "⚠ "}
+                        {entry.level === "warn" && <TriangleAlert className="inline-icon" aria-label="Предупреждение" />}
                         {entry.message}
                       </span>
                     </div>
@@ -248,7 +250,7 @@ export function RecommendationPage() {
                   <dd>{card.runId}</dd>
                 </div>
                 <div>
-                  <dt>Seed</dt>
+                  <dt>Начальное число (seed)</dt>
                   <dd>{report?.scenario.seed ?? "—"}</dd>
                 </div>
                 <div>
@@ -261,7 +263,7 @@ export function RecommendationPage() {
                 </div>
                 {Object.entries(report?.versions ?? {}).map(([key, value]) => (
                   <div key={key}>
-                    <dt>{key}</dt>
+                    <dt>{versionLabels[key] ?? key}</dt>
                     <dd>{value}</dd>
                   </div>
                 ))}
@@ -286,12 +288,12 @@ export function RecommendationPage() {
             <h1>Прогон не найден</h1>
             <p>Возможно, ссылка устарела или прогон был удалён.</p>
             <Link to="/recommendation">История прогонов</Link>
-            <Link to="/">На Обзор →</Link>
+            <Link to="/">На Обзор <ArrowRight className="inline-icon" aria-hidden="true" /></Link>
           </div>
         ) : (
           <div className="scenarios-empty">
             <div className="scenarios-empty__symbol" aria-hidden="true">
-              ▤
+              <FileText aria-hidden="true" />
             </div>
             <h1>
               {store.runs.length ? "Выберите прогон" : "Прогонов ещё не было"}
@@ -301,7 +303,7 @@ export function RecommendationPage() {
                 ? "Откройте результат в истории справа."
                 : "Нажмите «Получить рекомендацию» на Обзоре"}
             </p>
-            <Link to="/">На Обзор →</Link>
+            <Link to="/">На Обзор <ArrowRight className="inline-icon" aria-hidden="true" /></Link>
           </div>
         )}
       </div>
@@ -311,8 +313,8 @@ export function RecommendationPage() {
           <div className="history-filters" aria-label="Фильтр истории">
             {[
               { key: "all", label: "Все" },
-              { key: "recommend", label: "✓ Совет" },
-              { key: "refuse", label: "× Отказ" },
+              { key: "recommend", label: <><CircleCheck aria-hidden="true" /> Совет</> },
+              { key: "refuse", label: <><CircleX aria-hidden="true" /> Отказ</> },
             ].map((option) => (
               <button
                 key={option.key}
@@ -344,12 +346,12 @@ export function RecommendationPage() {
                   className={`history-run__status history-run__status--${run.status}`}
                 >
                   {run.status === "completed"
-                    ? "✓"
+                    ? <CircleCheck aria-hidden="true" />
                     : run.status === "refused"
-                      ? "×"
+                      ? <CircleX aria-hidden="true" />
                       : run.status === "failed"
-                        ? "!"
-                        : "…"}
+                        ? <CircleAlert aria-hidden="true" />
+                        : <LoaderCircle className="agent-node__spinner" aria-hidden="true" />}
                 </span>
               </div>
               <strong>

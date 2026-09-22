@@ -32,13 +32,6 @@
 .whatif-verdict.bad { background:#3a171b; border-color:#b63f48; color:#ff9298; }
 .whatif-verdict small { display:block; margin-top:5px; color:#c3c3ca; }
 .whatif-quality { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
-.whatif-forecasts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-bottom:18px; }
-.whatif-forecast { overflow:hidden; border:1px solid #303036; border-radius:10px; background:#1d1d22; }
-.whatif-forecast h3 { padding:10px 10px 0; margin:0; color:#c6c6ce; font-size:12px; font-weight:500; }
-.whatif-pareto { margin-top:18px; border-top:1px solid #303036; padding-top:15px; }
-.whatif-pareto-head { display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
-.whatif-pareto-head h2 { margin-bottom:4px; }
-.whatif-pareto-head span { color:#9999a3; font-size:11px; text-align:right; }
 .quality-item { border:1px solid #303036; border-radius:10px; padding:11px; }
 .quality-item h3 { margin:0 0 8px; font-size:13px; font-weight:500; color:#c3c3c9; }
 .quality-numbers { display:flex; align-items:end; gap:8px; font-variant-numeric:tabular-nums; }
@@ -51,4 +44,4 @@
 .cost-box { margin-top:14px; padding:14px; border-radius:11px; background:#202b22; border:1px solid #2a7040; color:#63df94; }
 .model-note { color:#aaaab2; font-size:12px; margin:16px 0 0; }
 @media (max-width: 900px) { .whatif-layout { grid-template-columns:1fr; } .whatif-page { padding:20px 16px 36px; } }
-@media (max-width: 520px) { .whatif-card-title { display:block; } .whatif-presets { justify-content:flex-start; margin:-4px 0 13px; } .whatif-forecasts,.whatif-quality { grid-template-columns:1fr; } .whatif-pareto-head { align-items:flex-start; flex-direction:column; gap:2px; } .whatif-pareto-head span { text-align:left; } }
+@media (max-width: 520px) { .whatif-card-title { display:block; } .whatif-presets { justify-content:flex-start; margin:-4px 0 13px; } .whatif-quality { grid-template-columns:1fr; } }

@@ -19,9 +19,19 @@ import { health, models, report, state, whatifResult } from "./fixtures";
 import scenarioData from "./fixtures/scenarios.json";
 import variableData from "./fixtures/controlledVariables.json";
 import telemetrySamples from "./fixtures/telemetry-samples.json";
+import scenarioProfileData from "./fixtures/scenarioProfiles.json";
 
 export const controlledVariables = variableData as ControlledVariable[];
 export const scenarioCatalog = scenarioData as ScenarioPreset[];
+type ScenarioProfile = {
+  variation: number;
+  controls: Record<string, number>;
+  extras: Record<string, number | null>;
+  quality: { sulfur: number; t95: number; cetane: number };
+  freshness: { limsAgeHours: number | null; pakAgeHours: number | null; d15AgeHours: number | null };
+};
+const scenarioProfiles = scenarioProfileData as Record<ScenarioKind, ScenarioProfile>;
+const profileFor = (kind: ScenarioKind) => scenarioProfiles[kind] ?? scenarioProfiles.normal;
 const STORAGE_KEY = "refinery.mock.runs.v1";
 type SavedRun = { draft: ScenarioDraft; createdAt: string; complete: boolean };
 const runs = new Map<string, SavedRun>();
@@ -72,6 +82,7 @@ export function getMockRun(id: string) {
 export function mockReport(id: string): RunReport {
   const item = runs.get(id);
   if (!item) throw new ApiError(404, "run_not_found", "Прогон не найден");
+  const profile = profileFor(item.draft.kind);
   const result = report(id, item.draft.kind);
   result.scenario = {
     ...item.draft,
@@ -84,12 +95,36 @@ export function mockReport(id: string): RunReport {
     item.draft.kind,
   ).freshness;
   result.recommendation.tPoint = item.draft.tPoint;
+  const qualityByTarget = {
+    sulfur: profile.quality.sulfur,
+    t95: profile.quality.t95,
+    cetane: profile.quality.cetane,
+    d15: profile.extras.pak_d15 ?? 835,
+  } as const;
+  result.quality = result.quality.map((itemQuality) => {
+    const p50 = qualityByTarget[itemQuality.target];
+    const spread = itemQuality.target === "sulfur" ? 0.7 : itemQuality.target === "t95" ? 1.8 : 0.5;
+    return { ...itemQuality, p10: round(p50 - spread), p50, p90: round(p50 + spread), intervalWidth: round(spread * 2), specRisk: itemQuality.target === "sulfur" ? round(Math.min(1, Math.max(0, (p50 - 8.8) / 2))) : itemQuality.target === "t95" ? (p50 + spread > 360 ? 0.7 : 0.05) : (p50 - spread < 51 ? 0.45 : 0.04) };
+  });
+  result.recommendation.risks = result.recommendation.risks.map((risk) => {
+    const p50 = qualityByTarget[risk.target];
+    const spread = risk.target === "sulfur" ? 0.7 : risk.target === "t95" ? 1.8 : 0.5;
+    return { ...risk, p10: round(p50 - spread), p50, p90: round(p50 + spread), specRisk: result.quality.find((quality) => quality.target === risk.target)?.specRisk ?? risk.specRisk };
+  });
+  result.recommendation.checks = result.recommendation.checks?.map((check) => {
+    if (check.constraintId === "sulfur_max") return { ...check, value: qualityByTarget.sulfur, passed: qualityByTarget.sulfur <= 10 };
+    if (check.constraintId === "t95_max") return { ...check, value: qualityByTarget.t95, passed: qualityByTarget.t95 <= 360 };
+    if (check.constraintId === "cetane_min_summer") return { ...check, value: qualityByTarget.cetane, passed: qualityByTarget.cetane >= 51 };
+    return check;
+  });
+  result.recommendation.effects = result.recommendation.effects?.map((effect) => ({ ...effect, baselineP50: qualityByTarget[effect.target], actionP50: qualityByTarget[effect.target], p10: round(qualityByTarget[effect.target] - (effect.target === "sulfur" ? 0.7 : effect.target === "t95" ? 1.8 : 0.5)), p90: round(qualityByTarget[effect.target] + (effect.target === "sulfur" ? 0.7 : effect.target === "t95" ? 1.8 : 0.5)) }));
   result.agentsTrace = agentTrace(id);
   if (!item.complete) result.status = "running";
   return result;
 }
 export function agentTrace(id: string): AgentStep[] {
   const run = getMockRun(id);
+  const profile = profileFor(run?.kind ?? "normal");
   const notes = [
     "Проверены источники и флаги качества",
     "Рассчитаны интервалы качества",
@@ -119,7 +154,7 @@ export function agentTrace(id: string): AgentStep[] {
     inputSummary: { tPoint: run?.tPoint, kind: run?.kind },
     output:
       agentRole === "quality"
-        ? { sulfur: { p50: 9.6, p10: 8.9, p90: 10.4 } }
+        ? { sulfur: { p50: profile.quality.sulfur, p10: round(profile.quality.sulfur - 0.7), p90: round(profile.quality.sulfur + 0.7) } }
         : agentRole === "data"
           ? { freshness: report(id, run?.kind ?? "normal").freshness }
           : { passed: run?.kind !== "bad_data" },
@@ -129,7 +164,7 @@ export function agentTrace(id: string): AgentStep[] {
         ? [
             {
               path: "sulfur.p50",
-              value: 9.6,
+              value: profile.quality.sulfur,
               unit: "мг/кг",
               label: "Прогноз серы",
             },
@@ -159,6 +194,7 @@ const round = (n: number) => Number(n.toFixed(2));
 function evaluate(req: WhatifRequest): WhatifResponse {
   if (req.variants.length > 8)
     throw new ApiError(400, "too_many_variants", "Не более 8 вариантов");
+  const profile = profileFor(activeKind);
   const variants = (req.variants.length ? req.variants : [req.overrides]).map(
     (changes) => {
       const overrides = { ...req.overrides, ...changes };
@@ -170,22 +206,29 @@ function evaluate(req: WhatifRequest): WhatifResponse {
             "unmanaged_override",
             `Неуправляемый или некорректный параметр: ${key}`,
           );
-      const delta = (overrides["24-2000.P8"] ?? 341.2) - 341.2;
-      const additive = overrides.blend_additive_pct ?? 0;
-      const kerosene = overrides.blend_share_kerosene ?? 0.12;
-      const gasoil = overrides.blend_share_gasoil ?? 0.24;
+      const baseline = profile.controls;
+      const p8 = baseline["24-2000.P8"] ?? 0;
+      const t11 = baseline["24-2000.T11"] ?? 0;
+      const f19 = baseline["24-2000.F19"] ?? 0;
+      const baseAdditive = baseline.blend_additive_pct ?? 0;
+      const baseKerosene = baseline.blend_share_kerosene ?? 0;
+      const baseGasoil = baseline.blend_share_gasoil ?? 0;
+      const delta = (overrides["24-2000.P8"] ?? p8) - p8;
+      const additive = overrides.blend_additive_pct ?? baseAdditive;
+      const kerosene = overrides.blend_share_kerosene ?? baseKerosene;
+      const gasoil = overrides.blend_share_gasoil ?? baseGasoil;
       const sulfur = round(
-        9.6 +
+        profile.quality.sulfur +
           // Expert sensitivity: raising the reactor inlet temperature lowers
           // sulfur by about 0.3 mg/kg per °C.
           delta * -0.3 +
-          ((overrides["24-2000.T11"] ?? 208) - 208) * 0.004 -
-          ((overrides["24-2000.F19"] ?? 4.2) - 4.2) * 0.8,
+          ((overrides["24-2000.T11"] ?? t11) - t11) * 0.004 -
+          ((overrides["24-2000.F19"] ?? f19) - f19) * 0.8,
       );
       const t95 = round(
-        355.1 - delta * 0.7 + (gasoil - 0.24) * 25 - (kerosene - 0.12) * 18,
+        profile.quality.t95 - delta * 0.7 + (gasoil - baseGasoil) * 25 - (kerosene - baseKerosene) * 18,
       );
-      const cetane = round(51.2 + additive * 0.75 - (kerosene - 0.12) * 5);
+      const cetane = round(profile.quality.cetane + (additive - baseAdditive) * 0.75 - (kerosene - baseKerosene) * 5);
       const quality = [
         {
           target: "sulfur" as const,
@@ -234,12 +277,18 @@ function evaluate(req: WhatifRequest): WhatifResponse {
       };
     },
   );
-  return { ...whatifResult, tPoint: req.tPoint, variants };
+  const baselineQuality = [
+    { target: "sulfur" as const, p10: round(profile.quality.sulfur - 0.7), p50: profile.quality.sulfur, p90: round(profile.quality.sulfur + 0.7), specRisk: round(Math.min(1, Math.max(0, (profile.quality.sulfur - 8.8) / 2))), unit: "мг/кг" },
+    { target: "t95" as const, p10: round(profile.quality.t95 - 1.8), p50: profile.quality.t95, p90: round(profile.quality.t95 + 1.8), specRisk: profile.quality.t95 + 1.8 > 360 ? 0.7 : 0.05, unit: "°C" },
+    { target: "cetane" as const, p10: round(profile.quality.cetane - 0.5), p50: profile.quality.cetane, p90: round(profile.quality.cetane + 0.5), specRisk: profile.quality.cetane - 0.5 < 51 ? 0.45 : 0.04, unit: "пункт" },
+  ];
+  return { ...whatifResult, tPoint: req.tPoint, baseline: baselineQuality, variants };
 }
 function snapshot(
   params: { tPoint?: string; tags?: string[] },
   kind: ScenarioKind = activeKind,
 ): StateResponse {
+  const profile = profileFor(kind);
   const tPoint =
     params.tPoint ??
     scenarioCatalog.find((p) => p.kind === kind)?.tPoint ??
@@ -247,32 +296,13 @@ function snapshot(
   const tags: TagPoint[] = controlledVariables.map((v) => ({
     tagCode: v.key,
     ts: tPoint,
-    value: v.current ?? null,
+    value: profile.controls[v.key] ?? v.current ?? null,
     qualityFlag: "ok",
     source: "kip",
     unit: v.unit,
   }));
-  const extra: [string, number | null, string][] = [
-    ["Q21", 9.4, "мг/кг"],
-    ["T5", 371, "°C"],
-    ["T6", 369, "°C"],
-    ["T55", 365, "°C"],
-    ["F65", 898, "т/ч"],
-    ["W70", 0.12, "%"],
-    ["P22", 0.8, "МПа"],
-    ["P13", 4.2, "МПа"],
-    ["F26", 248, "м³/ч"],
-    ["T18", 97.4, "°C"],
-    ["Q20", 9.1, "мг/кг"],
-    ["W4", 2.1, "%"],
-    ["W10", 1.9, "%"],
-    ["pak_sulfur", 9.4, "мг/кг"],
-    ["pak_d15", 835, "кг/м³"],
-    ["lims_sulfur", 9.4, "мг/кг"],
-    ["lims_cetane", 51.8, "пункт"],
-    ["blend_cetane", 51.8, "пункт"],
-    ["blend_t95", 355.1, "°C"],
-  ];
+  const extraUnits: Record<string, string> = { Q21: "мг/кг", T5: "°C", T6: "°C", T55: "°C", F65: "т/ч", W70: "%", P22: "МПа", P13: "МПа", F26: "м³/ч", T18: "°C", Q20: "мг/кг", W4: "%", W10: "%", pak_sulfur: "мг/кг", pak_d15: "кг/м³", lims_sulfur: "мг/кг", lims_cetane: "пункт", blend_cetane: "пункт", blend_t95: "°C" };
+  const extra: [string, number | null, string][] = Object.keys(extraUnits).map((tag) => [tag, profile.extras[tag] ?? null, extraUnits[tag] ?? ""]);
   if (kind === "bad_data") extra.push(["D10", null, "кг/м³"]);
   tags.push(
     ...extra.map(([tagCode, value, unit]) => ({
@@ -302,8 +332,8 @@ function snapshot(
       availableTs: tPoint,
       // Age is measured from sampling. Four hours later the LIMS result becomes
       // available, so this sample is usable at tPoint without future leakage.
-      ageHours: 5.2,
-      status: "ok",
+      ageHours: profile.freshness.limsAgeHours,
+      status: profile.freshness.limsAgeHours === null ? "missing" : profile.freshness.limsAgeHours > 52 ? "stale" : profile.freshness.limsAgeHours > 28 ? "warn" : "ok",
       warnAfterH: 28,
       staleAfterH: 52,
     },
@@ -312,8 +342,8 @@ function snapshot(
       source: "pak",
       lastSampleTs: tPoint,
       availableTs: tPoint,
-      ageHours: 0.2,
-      status: "ok",
+      ageHours: profile.freshness.pakAgeHours,
+      status: profile.freshness.pakAgeHours === null ? "missing" : profile.freshness.pakAgeHours > 52 ? "stale" : profile.freshness.pakAgeHours > 28 ? "warn" : "ok",
       warnAfterH: 28,
       staleAfterH: 52,
     },
@@ -322,8 +352,8 @@ function snapshot(
       source: "pak",
       lastSampleTs: tPoint,
       availableTs: tPoint,
-      ageHours: 32,
-      status: "warn",
+      ageHours: profile.freshness.d15AgeHours,
+      status: profile.freshness.d15AgeHours === null ? "missing" : profile.freshness.d15AgeHours > 52 ? "stale" : profile.freshness.d15AgeHours > 28 ? "warn" : "ok",
       warnAfterH: 28,
       staleAfterH: 52,
     },
@@ -403,15 +433,7 @@ function snapshot(
         kind === "bad_data" &&
         wasMasked &&
         ((index >= 15 && index <= 28) || index >= 43);
-      const base =
-        tag.value ??
-        (tag.tagCode === "D10"
-          ? null
-          : tag.tagCode === "Q21" || tag.tagCode === "Q20"
-            ? 9.4
-            : tag.tagCode === "F26"
-              ? 248
-              : 97.4);
+      const base = tag.value;
       return {
         ...tag,
         source,
@@ -419,7 +441,7 @@ function snapshot(
         value:
           inGap || base === null
             ? null
-            : round(base + sample * (Math.abs(base) > 100 ? 3 : 0.5)),
+            : round(base + sample * profile.variation * (Math.abs(base) > 100 ? 3 : 0.5)),
         qualityFlag: inGap || base === null ? tag.qualityFlag : ("ok" as const),
       };
     });

@@ -1,6 +1,5 @@
 import type { SseSource } from "@/services/sse";
-import { agentTrace, completeMockRun, getMockRun } from "./mockApi";
-import { recommendation } from "./fixtures";
+import { agentTrace, completeMockRun, getMockRun, mockReport } from "./mockApi";
 export function subscribeRunEvents({
   url,
   handlers,
@@ -72,7 +71,7 @@ export function subscribeRunEvents({
     later(base + 900, () => handlers.onAgentFinished?.(step));
   }
   later(6000, () => {
-    const card = recommendation(id, run.kind);
+    const card = mockReport(id).recommendation;
     card.tPoint = run.tPoint;
     if (card.decision === "refuse") handlers.onRefusal?.(card);
     else handlers.onRecommendation?.(card);

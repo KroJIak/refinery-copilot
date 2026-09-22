@@ -165,7 +165,6 @@ export function DashboardPage() {
       )}
       {store.error && (
         <div className="status-banner status-banner--error" role="alert">
-          {store.errorCode && <strong>{store.errorCode} · </strong>}
           {store.error}
         </div>
       )}

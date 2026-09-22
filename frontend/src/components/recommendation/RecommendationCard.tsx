@@ -1,4 +1,20 @@
 import type { ReactNode } from "react";
+import {
+  Activity,
+  ArrowRight,
+  CircleAlert,
+  CircleCheck,
+  CircleX,
+  FileText,
+  Gauge,
+  GitBranch,
+  ListChecks,
+  Settings2,
+  Sparkles,
+  TrendingUp,
+  TriangleAlert,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import type {
   AlternativeItem,
   QualityAssessment,
@@ -49,18 +65,18 @@ interface Props {
   showExport?: boolean;
 }
 function Block({
-  icon,
+  icon: Icon,
   title,
   children,
 }: {
-  icon: string;
+  icon: LucideIcon;
   title: string;
   children: ReactNode;
 }) {
   return (
     <section className="recommendation-block">
       <span className="recommendation-block__icon" aria-hidden="true">
-        {icon}
+        <Icon size={19} strokeWidth={1.9} />
       </span>
       <div>
         <h3>{title}</h3>
@@ -89,7 +105,7 @@ export function RecommendationCard({
         className={`recommendation-compact ${card.decision === "refuse" ? "recommendation-compact--refused" : ""}`}
       >
         <span className="recommendation-compact__star" aria-hidden="true">
-          {card.decision === "refuse" ? "!" : "✦"}
+          {card.decision === "refuse" ? <CircleAlert /> : <Sparkles />}
         </span>
         <span>
           {card.decision === "refuse" ? (
@@ -118,7 +134,7 @@ export function RecommendationCard({
     return (
       <article className="recommendation-card recommendation-card--refused">
         <div className="refusal-heading">
-          <span aria-hidden="true">!</span>
+          <span aria-hidden="true"><TriangleAlert /></span>
           <h1>Надёжной рекомендации нет</h1>
         </div>
         <ul className="refusal-reasons">
@@ -175,7 +191,7 @@ export function RecommendationCard({
           </div>
         </div>
       )}
-      <Block title="Время и состояние" icon="◷">
+      <Block title="Время и состояние" icon={Activity}>
         <p>
           {new Date(card.tPoint).toLocaleString("ru-RU", {
             timeZone: "UTC",
@@ -193,7 +209,7 @@ export function RecommendationCard({
             .join(" · ")}
         </p>
       </Block>
-      <Block title="Проблема / риск" icon="△">
+      <Block title="Проблема / риск" icon={TriangleAlert}>
         {card.risks.map((risk) => (
           <div className="risk-line" key={risk.target}>
             <p>
@@ -215,7 +231,7 @@ export function RecommendationCard({
           </div>
         ))}
       </Block>
-      <Block title="Предлагаемое действие" icon="⚙">
+      <Block title="Предлагаемое действие" icon={Settings2}>
         {card.actions?.map((item) => (
           <p className="action-line" key={item.tag}>
             {shortTag(item.tag)}: {number(item.currentValue)} →{" "}
@@ -230,7 +246,7 @@ export function RecommendationCard({
           </p>
         ))}
       </Block>
-      <Block title="Ожидаемый эффект" icon="▥">
+      <Block title="Ожидаемый эффект" icon={TrendingUp}>
         {card.effects?.map((effect) => (
           <p key={effect.target}>
             {targetLabel[effect.target]}: {number(effect.baselineP50)} →{" "}
@@ -263,14 +279,14 @@ export function RecommendationCard({
           </details>
         )}
       </Block>
-      <Block title="Проверка ограничений" icon="♧">
+      <Block title="Проверка ограничений" icon={ListChecks}>
         <div className="constraint-list">
           {card.checks?.map((check) => (
             <span
               className={check.passed ? "constraint-pass" : "constraint-fail"}
               key={check.constraintId}
             >
-              <b aria-hidden="true">{check.passed ? "✓" : "×"}</b>
+              <b aria-hidden="true">{check.passed ? <CircleCheck /> : <CircleX />}</b>
               {check.description}
             </span>
           ))}
@@ -282,7 +298,7 @@ export function RecommendationCard({
           </p>
         )}
       </Block>
-      <Block title="Уверенность" icon="◎">
+      <Block title="Уверенность" icon={Gauge}>
         {card.confidence ? (
           <>
             <p>
@@ -302,11 +318,11 @@ export function RecommendationCard({
           <p>Нет оценки</p>
         )}
       </Block>
-      <Block title="Объяснение" icon="▤">
+      <Block title="Объяснение" icon={FileText}>
         <p>{card.explanation}</p>
       </Block>
       {!!card.alternatives.length && (
-        <Block title="Альтернативы" icon="↗">
+        <Block title="Альтернативы" icon={GitBranch}>
           {card.alternatives.map((alt) => (
             <div className="alternative-row" key={alt.label}>
               <span>
@@ -318,7 +334,7 @@ export function RecommendationCard({
                   className="text-button"
                   onClick={() => onApplyAsScenario(card, alt)}
                 >
-                  В What-if →
+                  В «Что если» <ArrowRight aria-hidden="true" size={15} />
                 </button>
               )}
             </div>

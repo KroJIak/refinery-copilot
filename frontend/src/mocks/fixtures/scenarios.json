@@ -8,7 +8,7 @@
   },
   {
     "kind": "quality_risk",
-    "tPoint": "2026-06-15T08:00:00Z",
+    "tPoint": "2026-07-21T08:00:00Z",
     "label": "Риск серы",
     "description": "Сера у границы 10 мг/кг",
     "overrides": {}
