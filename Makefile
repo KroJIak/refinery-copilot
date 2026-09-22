@@ -3,7 +3,7 @@
 API_PORT ?= 8000
 VITE_PORT ?= 5173
 PORT ?=
-.PHONY: help data train demo run ui test lint up down mocks
+.PHONY: help data train demo run ui test lint up down
 
 # PORT перекрывает порт цели: make ui PORT=5174, make run PORT=8001
 ui_port = $(if $(PORT),$(PORT),$(VITE_PORT))
@@ -49,6 +49,3 @@ up: ## docker compose
 
 down: ## остановить контейнеры
 	docker compose down
-
-mocks: ## не использовать: интерфейс ходит в api
-	@echo "заглушки отключены. запустите make run и make ui"

@@ -19,8 +19,8 @@ import type {
   TagPoint,
   WhatifResponse,
 } from "@/types";
-import { api, setScenarioContext, subscribeRunEvents } from "@/mocks";
 import { userMessage } from "@/services/userMessage";
+import { api, setScenarioContext, subscribeRunEvents } from "@/mocks";
 
 export interface AppStore {
   state: StateResponse | null;
@@ -146,8 +146,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
         get().scenarios.find((item) => item.kind === "quality_risk") ??
         get().scenarios[0];
       if (preset) {
-        set({ kind: preset.kind });
         setScenarioContext(preset.kind);
+        set({ kind: preset.kind });
       }
       await get().loadState({ tPoint: preset?.tPoint });
       const previous = get().state?.lastRun;
@@ -218,8 +218,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
     if (kind === get().kind && get().state) return;
     const preset = get().scenarios.find((item) => item.kind === kind);
     get().resetRun();
-    set({ kind, whatifResult: null });
     setScenarioContext(kind);
+    set({ kind, whatifResult: null });
     await get().loadState({ tPoint: preset?.tPoint });
   },
   ensureModels: async () => {
@@ -260,11 +260,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
       );
       let restoredState: StateResponse | null = null;
       if (!activeBusy) {
-        setScenarioContext(value.scenario.kind);
+
         stateAbort?.abort();
         stateVersion++;
         restoredState = await api.getState({ tPoint: value.scenario.tPoint });
         if (version !== reportVersion) return;
+        setScenarioContext(value.scenario.kind);
       }
       set({
         reports: { ...get().reports, [id]: value },

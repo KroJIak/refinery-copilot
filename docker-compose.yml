@@ -30,8 +30,6 @@ services:
   web:
     build:
       context: ./frontend
-      args:
-        VITE_USE_MOCKS: ${VITE_USE_MOCKS:-true}
     env_file: .env
     environment:
       BACKEND_URL: ${BACKEND_URL:-http://api:8000}
