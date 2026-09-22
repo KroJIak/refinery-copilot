@@ -25,12 +25,14 @@ def print_session_banner(
     body = Text()
     body.append(f"seed {seed}\n")
     body.append("сера считается по процессу и вчерашней пробе, анализатор серы в расчёт не берём\n")
-    body.append("ошибка на проверке около 1.8 мг/кг, облако попадает в норму примерно в 8 случаях из 10\n")
     body.append(
-        f"T95 берём из последней пробы, запас ±{t95.get('interval_halfwidth', 7):.0f} °C\n"
+        "ошибка на проверке около 1.8 мг/кг, облако попадает в норму примерно в 8 случаях из 10\n"
     )
+    body.append(f"T95 берём из последней пробы, запас ±{t95.get('interval_halfwidth', 7):.0f} °C\n")
     body.append(f"сценарии: {titles}")
-    console.print(Panel(body, title="демо", border_style="bright_black", padding=(0, 1), expand=True))
+    console.print(
+        Panel(body, title="демо", border_style="bright_black", padding=(0, 1), expand=True)
+    )
 
 
 class ConsoleSink:

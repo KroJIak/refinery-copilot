@@ -52,8 +52,8 @@ class Orchestrator:
         reasons, details = collect(ctx)
         slices = ctx.steps["data"].output["slices"]
         state = [
+            {"tag": "24-2000.P8", "value": slices.get("P8"), "unit": "МПа"},
             {"tag": "24-2000.T11", "value": slices.get("T5"), "unit": "°C"},
-            {"tag": "24-2000.F26", "value": slices.get("F26"), "unit": "т/ч"},
             {"tag": "24-2000.F19", "value": slices.get("P13"), "unit": "МПа"},
             {"tag": "feed_sulfur", "value": slices.get("feed_sulfur"), "unit": "% масс."},
         ]
@@ -121,7 +121,9 @@ class Orchestrator:
             a for a in ctx.steps["quality"].output["assessments"] if a["target"] == "sulfur"
         )
         actions = []
-        if chosen["delta_T5"] or (chosen["T5"] == t5 and not chosen.get("delta_F26") and not chosen.get("delta_P13")):
+        if chosen["delta_T5"] or (
+            chosen["T5"] == t5 and not chosen.get("delta_F26") and not chosen.get("delta_P13")
+        ):
             actions.append(
                 {
                     "tag": "24-2000.T11",
@@ -262,11 +264,7 @@ class Orchestrator:
             "p10": 0.62 if chosen["margin"] > 0.3 else 0.45,
             "p90": 0.88 if chosen["margin"] > 0.3 else 0.72,
         }
-        if (
-            chosen["delta_T5"] == 0
-            and not chosen.get("delta_F26")
-            and not chosen.get("delta_P13")
-        ):
+        if chosen["delta_T5"] == 0 and not chosen.get("delta_F26") and not chosen.get("delta_P13"):
             expl = (
                 f"Режим оставляем. Температура реактора {t5:.1f} °C, "
                 f"ожидаемая сера {sulfur0['p50']:.2f} мг/кг, "

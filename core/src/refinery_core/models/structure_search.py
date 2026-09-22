@@ -246,10 +246,34 @@ MONOTONE = {
 
 
 LGBM_GRIDS = [
-    {"name": "lgb_default", "num_leaves": 31, "learning_rate": 0.05, "min_data_in_leaf": 20, "n_estimators": 400},
-    {"name": "lgb_shallow", "num_leaves": 15, "learning_rate": 0.05, "min_data_in_leaf": 40, "n_estimators": 300},
-    {"name": "lgb_deep", "num_leaves": 63, "learning_rate": 0.03, "min_data_in_leaf": 12, "n_estimators": 500},
-    {"name": "lgb_slow", "num_leaves": 24, "learning_rate": 0.02, "min_data_in_leaf": 25, "n_estimators": 800},
+    {
+        "name": "lgb_default",
+        "num_leaves": 31,
+        "learning_rate": 0.05,
+        "min_data_in_leaf": 20,
+        "n_estimators": 400,
+    },
+    {
+        "name": "lgb_shallow",
+        "num_leaves": 15,
+        "learning_rate": 0.05,
+        "min_data_in_leaf": 40,
+        "n_estimators": 300,
+    },
+    {
+        "name": "lgb_deep",
+        "num_leaves": 63,
+        "learning_rate": 0.03,
+        "min_data_in_leaf": 12,
+        "n_estimators": 500,
+    },
+    {
+        "name": "lgb_slow",
+        "num_leaves": 24,
+        "learning_rate": 0.02,
+        "min_data_in_leaf": 25,
+        "n_estimators": 800,
+    },
 ]
 
 
@@ -293,7 +317,9 @@ def fit_lgb_quantile(X, y, alpha: float, params: dict, monotone: list[int] | Non
 
 def conformalize(y_cal, lo, hi, alpha=0.2) -> float:
     scores = np.maximum(lo - y_cal, y_cal - hi)
-    q = np.quantile(scores, min(1.0, np.ceil((len(scores) + 1) * (1 - alpha)) / max(len(scores), 1)))
+    q = np.quantile(
+        scores, min(1.0, np.ceil((len(scores) + 1) * (1 - alpha)) / max(len(scores), 1))
+    )
     return float(max(q, 0.0))
 
 
@@ -329,7 +355,6 @@ def evaluate(y, p10, p50, p90) -> Eval:
 
 def time_folds(ds: pd.DataFrame, n_splits: int = 5) -> list[tuple[np.ndarray, np.ndarray]]:
     """Expanding time folds on LIMS rows with a 1-day embargo."""
-    ts = ds["sample_ts"].to_numpy()
     idx = np.arange(len(ds))
     folds = []
     # use years 2023-2025 as CV, leave 2026 for cal+hold
@@ -387,7 +412,10 @@ def run() -> pd.DataFrame:
         # ridge / pls on median only, fake quantiles via residual std
         for model_name, est in [
             ("ridge", make_pipeline(StandardScaler(), Ridge(alpha=1.0))),
-            ("pls2", make_pipeline(StandardScaler(), PLSRegression(n_components=min(2, len(used))))),
+            (
+                "pls2",
+                make_pipeline(StandardScaler(), PLSRegression(n_components=min(2, len(used)))),
+            ),
         ]:
             t0 = time.time()
             Xtr = np.nan_to_num(X_all[tr_mask], nan=np.nanmedian(X_all[tr_mask], axis=0))
@@ -430,7 +458,7 @@ def run() -> pd.DataFrame:
                     m10 = fit_lgb_quantile(Xtr, ytr, 0.1, grid, constraints)
                     m50 = fit_lgb_quantile(Xtr, ytr, 0.5, grid, constraints)
                     m90 = fit_lgb_quantile(Xtr, ytr, 0.9, grid, constraints)
-                except Exception as exc:
+                except (ValueError, RuntimeError) as exc:
                     print("fail", pack_name, grid["name"], mono, exc)
                     continue
                 for split_name, mask in [("cal", cal_mask), ("hold", ho_mask)]:
@@ -501,7 +529,11 @@ def run() -> pd.DataFrame:
     res.to_csv(OUT_DIR / "structure_ablation.csv", index=False)
     hold = res[res["split"] == "hold"].sort_values("mae")
     print("\n=== HOLD MAE top ===")
-    print(hold[["pack", "model", "mae", "coverage", "winkler", "spec_mae", "crossing", "n"]].head(25).to_string(index=False))
+    print(
+        hold[["pack", "model", "mae", "coverage", "winkler", "spec_mae", "crossing", "n"]]
+        .head(25)
+        .to_string(index=False)
+    )
     print("\n=== HOLD MAE bottom ===")
     print(hold[["pack", "model", "mae", "coverage"]].tail(10).to_string(index=False))
     return res

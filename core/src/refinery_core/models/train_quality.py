@@ -75,7 +75,13 @@ def fit_loc_mono(X: np.ndarray, y: np.ndarray, cols: list[str]) -> lgb.Booster:
     for c in cols:
         if c.startswith("T5_") and "std" not in c:
             mono.append(-1)
-        elif c.startswith("F26_") and "std" not in c and "inv" not in c and "recent" not in c or c in {"cat_age_days", "feed_sulfur"}:
+        elif (
+            c.startswith("F26_")
+            and "std" not in c
+            and "inv" not in c
+            and "recent" not in c
+            or c in {"cat_age_days", "feed_sulfur"}
+        ):
             mono.append(1)
         else:
             mono.append(0)
@@ -171,7 +177,9 @@ def train_sulfur() -> dict:
             "Do not use quantile T5-gradient for advice."
         ),
     }
-    (OUT_S / "metrics.json").write_text(json.dumps(metrics, indent=2, ensure_ascii=False), encoding="utf-8")
+    (OUT_S / "metrics.json").write_text(
+        json.dumps(metrics, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
     print("sulfur hold CQR", metrics["hold_cqr"])
     print("physics", metrics["physics_T5_plus5C_hold"])
     return metrics
@@ -224,7 +232,9 @@ def train_t95() -> dict | None:
         "cal_mae": float(mean_absolute_error(y[cal], p_cal)),
         "note": "LightGBM quantile lost to last-lab on 2026 hold. Do not ship a weaker booster.",
     }
-    (OUT_T / "metrics.json").write_text(json.dumps(metrics, indent=2, ensure_ascii=False), encoding="utf-8")
+    (OUT_T / "metrics.json").write_text(
+        json.dumps(metrics, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
     print("t95 persistence+month", metrics["hold"], "cal", metrics["cal_mae"])
     return metrics
 

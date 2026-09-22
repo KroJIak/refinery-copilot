@@ -37,6 +37,16 @@ frontend/.env.*.local
 # Data and run artifacts
 data/
 artifacts/
+/catboost_info/
+
+
+# Runtime logs and local reports
+*.log
+logs/
+coverage/
+playwright-report/
+test-results/
+.vite/
 
 # Local docs and mockups
 docs/internal/
@@ -62,6 +72,8 @@ CLAUDE.md
 # Editors and OS
 .idea/
 .vscode/
+*.code-workspace
+*.iml
 *.swp
 *.swo
 *~

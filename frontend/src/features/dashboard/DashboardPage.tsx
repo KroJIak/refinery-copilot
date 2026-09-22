@@ -28,21 +28,23 @@ const dateLabel = (value: string) =>
 
 export function DashboardPage() {
   const store = useAppStore();
+  const bootstrap = useAppStore((state) => state.bootstrap);
+  const selectScenario = useAppStore((state) => state.selectScenario);
   const [search, setSearch] = useSearchParams();
   const requestedKind = search.get("kind");
   const running =
     store.runStatus === "started" || store.runStatus === "running";
   const selected = store.scenarios.find((item) => item.kind === store.kind);
   useEffect(() => {
-    void store.bootstrap();
-  }, [store.bootstrap]);
+    void bootstrap();
+  }, [bootstrap]);
   useEffect(() => {
     if (!store.scenarios.length || !store.state || store.loading) return;
     const requested = store.scenarios.find(
       (item) => item.kind === requestedKind,
     );
     if (requested && requested.kind !== store.kind && !running) {
-      void store.selectScenario(requested.kind);
+      void selectScenario(requested.kind);
       return;
     }
     if (!requestedKind || !requested) {
@@ -57,7 +59,7 @@ export function DashboardPage() {
     store.state,
     store.loading,
     store.kind,
-    store.selectScenario,
+    selectScenario,
     running,
     selected,
     setSearch,

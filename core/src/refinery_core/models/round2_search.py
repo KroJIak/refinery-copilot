@@ -67,7 +67,9 @@ def sample_weights(df: pd.DataFrame) -> np.ndarray:
     return w
 
 
-def predict_triple(models: dict[float, lgb.Booster], X: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def predict_triple(
+    models: dict[float, lgb.Booster], X: np.ndarray
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     p10 = models[0.1].predict(X)
     p50 = models[0.5].predict(X)
     p90 = models[0.9].predict(X)
@@ -141,8 +143,8 @@ def run() -> pd.DataFrame:
             models[a] = lgb.train(p, dtrain, num_boost_round=300)
         elapsed = time.time() - t0
 
-        def restore(p, mask):
-            return p + prev[mask] if delta else p
+        def restore(p, mask, *, use_delta=delta):
+            return p + prev[mask] if use_delta else p
 
         p10c, p50c, p90c = (restore(models[a].predict(X[cal]), cal) for a in (0.1, 0.5, 0.9))
         q = conformalize(y[cal], p10c, p90c)
@@ -202,7 +204,7 @@ def run() -> pd.DataFrame:
                 extra.update(coverage_cqr=evc.coverage, winkler_cqr=evc.winkler, cqr_q=q)
             rows.append(rec("level_plant", "cat_multiquantile", split, ev, **extra))
         print("done catboost")
-    except Exception as exc:
+    except (ImportError, ModuleNotFoundError) as exc:
         print("catboost skip", exc)
 
     try:
@@ -236,7 +238,7 @@ def run() -> pd.DataFrame:
                 extra.update(coverage_cqr=evc.coverage, winkler_cqr=evc.winkler, cqr_q=q)
             rows.append(rec("level_plant", "xgb_quantile", split, ev, **extra))
         print("done xgboost")
-    except Exception as exc:
+    except (ImportError, ModuleNotFoundError) as exc:
         print("xgboost skip", exc)
 
     # two-stage: L2/Huber level then quantile residuals (plant features)
@@ -280,7 +282,20 @@ def run() -> pd.DataFrame:
     res.to_csv(OUT / "round2_ablation.csv", index=False)
     hold = res[res["split"] == "hold"].sort_values("mae")
     print("\n=== HOLD ===")
-    cols_print = [c for c in ["pack", "model", "mae", "coverage", "coverage_cqr", "winkler", "winkler_cqr", "spec_mae"] if c in hold.columns]
+    cols_print = [
+        c
+        for c in [
+            "pack",
+            "model",
+            "mae",
+            "coverage",
+            "coverage_cqr",
+            "winkler",
+            "winkler_cqr",
+            "spec_mae",
+        ]
+        if c in hold.columns
+    ]
     print(hold[cols_print].to_string(index=False))
     calr = res[res["split"] == "cal"].sort_values("mae")
     print("\n=== CAL ===")

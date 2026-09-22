@@ -64,8 +64,8 @@ EXPECTED_OUTCOME: dict[ScenarioKind, Decision] = {
 
 CONTROLLED_TAGS = frozenset(
     {
+        "24-2000.P8",
         "24-2000.T11",
-        "24-2000.F26",
         "24-2000.F19",
         "blend_share_kerosene",
         "blend_share_gasoil",

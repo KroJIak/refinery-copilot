@@ -91,7 +91,9 @@ def main() -> None:
         "feature_gain": gain.round(4).to_dict(),
         "note": "Q21 is not a feature. That would leak the analyzer into the advice loop.",
     }
-    (OUT / "metrics.json").write_text(json.dumps(metrics, indent=2, ensure_ascii=False), encoding="utf-8")
+    (OUT / "metrics.json").write_text(
+        json.dumps(metrics, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
     print(json.dumps(metrics["hold_cqr"], indent=2))
     print("top gain", list(gain.head(8).items()))
     print("saved", OUT)

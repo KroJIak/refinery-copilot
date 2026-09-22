@@ -36,6 +36,8 @@ export function RecommendationPage() {
   const [exportError, setExportError] = useState<string | null>(null);
   const logRef = useRef<HTMLDivElement>(null);
   const followLog = useRef(true);
+  const ensureRuns = useAppStore((state) => state.ensureRuns);
+  const loadRun = useAppStore((state) => state.loadRun);
   const active = store.runStatus === "running" || store.runStatus === "started";
   const viewingActive = !!routeRunId && routeRunId === store.runId;
   const running = viewingActive && active;
@@ -51,21 +53,21 @@ export function RecommendationPage() {
     !store.reportLoading &&
     !!store.reportError;
   useEffect(() => {
-    void store.ensureRuns();
-  }, [store.ensureRuns]);
+    void ensureRuns();
+  }, [ensureRuns]);
   useEffect(() => {
     if (!routeRunId && active && store.runId) {
       navigate(`/recommendation/${store.runId}`, { replace: true });
       return;
     }
-    if (routeRunId && !running && !report) void store.loadRun(routeRunId);
+    if (routeRunId && !running && !report) void loadRun(routeRunId);
   }, [
     routeRunId,
     active,
     store.runId,
     running,
     report,
-    store.loadRun,
+    loadRun,
     navigate,
   ]);
   useEffect(() => {

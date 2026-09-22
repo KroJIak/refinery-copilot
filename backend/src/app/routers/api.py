@@ -2,7 +2,7 @@ import math
 
 from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import FileResponse, PlainTextResponse
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from pydantic.alias_generators import to_camel
 from sse_starlette.sse import EventSourceResponse
 
@@ -28,9 +28,15 @@ class Camel(BaseModel):
 class RunBody(Camel):
     kind: str
     t_point: str = Field(alias="tPoint")
-    overrides: dict[str, float] = {}
+    overrides: dict[str, float] = Field(default_factory=dict)
     seed: int | None = None
     season: str = "auto"
+
+    @field_validator("t_point")
+    @classmethod
+    def valid_t_point(cls, value: str) -> str:
+        _moment(value)
+        return value
 
 
 def _app(request: Request) -> AppState:
@@ -53,9 +59,27 @@ def _finite(value) -> float | None:
         number = float(value)
     except (TypeError, ValueError):
         return None
-    if math.isnan(number):
+    if not math.isfinite(number):
         return None
     return number
+
+
+def _valid_overrides(value: object) -> dict[str, float]:
+    if value is None:
+        return {}
+    if not isinstance(value, dict):
+        raise TypeError("overrides должны быть объектом")
+    allowed = {item["key"] for item in CONTROLLED}
+    unknown = set(value) - allowed
+    if unknown:
+        raise ValueError("неуправляемые параметры: " + ", ".join(sorted(unknown)))
+    result: dict[str, float] = {}
+    for key, raw in value.items():
+        number = _finite(raw)
+        if number is None:
+            raise ValueError(f"некорректное значение {key}")
+        result[key] = number
+    return result
 
 
 class _T95Ctx:
@@ -99,9 +123,11 @@ def state(request: Request, t_point: str | None = Query(None, alias="tPoint")) -
     if app.store is None:
         raise _err(503, "data_missing", "Датасет качества не найден")
     raw = t_point or PRESETS["quality_risk"]["t_point"].strftime("%Y-%m-%dT%H:%M:%SZ")
-    ts = _moment(raw)
     try:
+        ts = _moment(raw)
         return state_payload(app, ts)
+    except ValueError as exc:
+        raise _err(400, "bad_t_point", "Некорректная временная метка") from exc
     except LookupError as exc:
         raise _err(404, "no_sample", str(exc)) from exc
 
@@ -109,8 +135,8 @@ def state(request: Request, t_point: str | None = Query(None, alias="tPoint")) -
 @router.post("/runs", status_code=202)
 def create_run(body: RunBody, request: Request) -> dict:
     app = _app(request)
-    ts = _moment(body.t_point)
     try:
+        ts = _moment(body.t_point)
         run_id = start_run(
             app,
             body.kind,  # type: ignore[arg-type]
@@ -229,8 +255,14 @@ def whatif(request: Request, body: dict) -> dict:
 
     started = perf_counter()
     raw = body.get("tPoint")
-    ts = _moment(str(raw))
-    row = app.store.row_at(ts)
+    try:
+        ts = _moment(str(raw))
+    except ValueError as exc:
+        raise _err(400, "bad_t_point", "Некорректная временная метка") from exc
+    try:
+        row = app.store.row_at(ts)
+    except LookupError as exc:
+        raise _err(404, "no_sample", str(exc)) from exc
     df = add_plant_features(pd.DataFrame([row]))
     season = season_of(ts, str(body.get("season") or "auto"))
     floor = cetane_floor(season)
@@ -298,8 +330,19 @@ def whatif(request: Request, body: dict) -> dict:
         hdu_s, hdu_t = s50 + shift, t95
         sulfur = diesel * hdu_s + kerosene * kerosene_s + gasoil * gasoil_s
         boiling = diesel * hdu_t + kerosene * kerosene_t + gasoil * gasoil_t
-        cetane = None if cetane0 is None else diesel * cetane0 + kerosene * kerosene_c + gasoil * gasoil_c + additive * ADDITIVE_CETANE_PER_PCT
-        density = None if density0 is None else diesel * density0 + kerosene * kerosene_d + gasoil * gasoil_d
+        cetane = (
+            None
+            if cetane0 is None
+            else diesel * cetane0
+            + kerosene * kerosene_c
+            + gasoil * gasoil_c
+            + additive * ADDITIVE_CETANE_PER_PCT
+        )
+        density = (
+            None
+            if density0 is None
+            else diesel * density0 + kerosene * kerosene_d + gasoil * gasoil_d
+        )
         band = (s90 - s10) / 2 + abs(shift) * 0.25 + (kerosene + gasoil) * 0.4
         violations: list[str] = []
         t5_now = None if base_t5 is None else base_t5 + delta_t5
@@ -318,13 +361,26 @@ def whatif(request: Request, body: dict) -> dict:
         if kerosene < -1e-9 or gasoil < -1e-9 or diesel < -1e-6:
             violations.append("blend_shares")
         quality = [
-            point("sulfur", sulfur - band, sulfur, sulfur + band, "мг/кг", (sulfur + band - 10) / 10),
+            point(
+                "sulfur", sulfur - band, sulfur, sulfur + band, "мг/кг", (sulfur + band - 10) / 10
+            ),
             point("t95", boiling - half, boiling, boiling + half, "°C", boiling - T95_MAX),
         ]
         if cetane is not None:
-            quality.append(point("cetane", cetane - 0.4, cetane, cetane + 0.4, "пункт", floor - (cetane - 0.4)))
+            quality.append(
+                point("cetane", cetane - 0.4, cetane, cetane + 0.4, "пункт", floor - (cetane - 0.4))
+            )
         if density is not None:
-            quality.append(point("d15", density - 1.5, density, density + 1.5, "кг/м³", 0 if DENSITY_MIN <= density <= DENSITY_MAX else 1))
+            quality.append(
+                point(
+                    "d15",
+                    density - 1.5,
+                    density,
+                    density + 1.5,
+                    "кг/м³",
+                    0 if DENSITY_MIN <= density <= DENSITY_MAX else 1,
+                )
+            )
         saved = max(0.0, s50 - sulfur)
         cost = SULFUR_ENERGY * saved + additive * ADDITIVE_COST_PER_PCT
         return {
@@ -342,7 +398,14 @@ def whatif(request: Request, body: dict) -> dict:
     }
     baseline = blend(base_overrides)["quality"]
     incoming = body.get("variants") or [body.get("overrides") or {}]
-    variants = [blend(item if isinstance(item, dict) else {}) for item in incoming[:8]]
+    if not isinstance(incoming, list) or not incoming:
+        raise _err(400, "bad_variants", "variants должен содержать хотя бы один вариант")
+    if len(incoming) > 8:
+        raise _err(400, "too_many_variants", "Допустимо не более восьми вариантов")
+    try:
+        variants = [blend(_valid_overrides(item)) for item in incoming]
+    except (TypeError, ValueError) as exc:
+        raise _err(400, "bad_overrides", str(exc)) from exc
     return {
         "tPoint": raw,
         "elapsedMs": int((perf_counter() - started) * 1000),

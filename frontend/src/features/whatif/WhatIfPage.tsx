@@ -18,6 +18,9 @@ export function WhatIfPage() {
   const immediate = useRef(true);
   const evaluationTimer = useRef<number | null>(null);
   const variables = store.controlledVariables;
+  const evaluateWhatif = useAppStore((state) => state.evaluateWhatif);
+  const setWhatifDraft = useAppStore((state) => state.setWhatifDraft);
+  const selectScenario = useAppStore((state) => state.selectScenario);
   const preset = store.scenarios.find((item) => item.kind === store.kind);
   const baseline = useMemo(() => {
     const latest = new Map(store.tags.slice().sort((a, b) => a.ts.localeCompare(b.ts)).map((tag) => [tag.tagCode, tag]));
@@ -53,14 +56,14 @@ export function WhatIfPage() {
   useLayoutEffect(() => {
     if (!overrides || !store.tPoint) return;
     evaluationTimer.current = window.setTimeout(() => {
-      void store.evaluateWhatif(overrides);
+      void evaluateWhatif(overrides);
     }, immediate.current ? 0 : 150);
     immediate.current = false;
     return () => {
       if (evaluationTimer.current !== null) window.clearTimeout(evaluationTimer.current);
       evaluationTimer.current = null;
     };
-  }, [overrides, store.evaluateWhatif, store.tPoint]);
+  }, [overrides, evaluateWhatif, store.tPoint]);
 
   const change = (variable: ControlledVariable, raw: number) => {
     if (!overrides || !Number.isFinite(raw)) return;
@@ -87,8 +90,8 @@ export function WhatIfPage() {
     initialized.current = null;
     setCustom(false);
     immediate.current = true;
-    store.setWhatifDraft({});
-    await store.selectScenario(kind);
+    setWhatifDraft({});
+    await selectScenario(kind);
   };
 
   const current = store.whatifResult?.variants[0];

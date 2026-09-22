@@ -16,18 +16,64 @@ from refinery_core.scenarios import LABELS, PRESETS, resolve_scenario
 from refinery_core.store import SliceStore
 from refinery_core.types import ScenarioKind
 
-# Имена ручек — официальные теги ТЗ. Числа p2–p98 и источник ряда взяты по поведению
-# архива: справочник 24-2000 подписан иначе, чем ведут себя колонки.
-# T11 в справочнике — температура входа, в ряду это колонка T11 (~364 °C).
-# F19 в справочнике — давление реактора, в ряду это колонка P13 (~3.9 МПа).
-# Расход продукта, который двигает модель серы, — колонка F26.
+# Официальные ручки ТЗ: P8, T11 и F19. По поведению архивных рядов P8 — давление
+# в МПа, T11 — температура в °C, а F19 сопоставлен с P13 (давление в МПа).
+# Их исторические диапазоны являются модельным допущением, а не паспортными пределами.
 CONTROLLED = [
-    {"key": "24-2000.T11", "group": "hdu", "label": "Температура входа реактора", "unit": "°C", "p2": 345, "p98": 382, "step": 0.5},
-    {"key": "24-2000.F26", "group": "hdu", "label": "Расход продукта", "unit": "т/ч", "p2": 163, "p98": 301, "step": 1},
-    {"key": "24-2000.F19", "group": "hdu", "label": "Давление реактора", "unit": "МПа", "p2": 3.66, "p98": 4.05, "step": 0.01},
-    {"key": "blend_share_kerosene", "group": "blend", "label": "Доля керосина", "unit": "доля", "p2": 0, "p98": 0.4, "step": 0.01},
-    {"key": "blend_share_gasoil", "group": "blend", "label": "Доля газойля", "unit": "доля", "p2": 0, "p98": 0.4, "step": 0.01},
-    {"key": "blend_additive_pct", "group": "blend", "label": "Присадка", "unit": "%", "p2": 0, "p98": 3, "step": 0.1},
+    {
+        "key": "24-2000.P8",
+        "group": "hdu",
+        "label": "Режим P8",
+        "unit": "МПа",
+        "p2": 0.08,
+        "p98": 0.24,
+        "step": 0.01,
+    },
+    {
+        "key": "24-2000.T11",
+        "group": "hdu",
+        "label": "Температура входа реактора",
+        "unit": "°C",
+        "p2": 316,
+        "p98": 387,
+        "step": 0.5,
+    },
+    {
+        "key": "24-2000.F19",
+        "group": "hdu",
+        "label": "Давление реактора",
+        "unit": "МПа",
+        "p2": 3.0,
+        "p98": 4.1,
+        "step": 0.01,
+    },
+    {
+        "key": "blend_share_kerosene",
+        "group": "blend",
+        "label": "Доля керосина",
+        "unit": "доля",
+        "p2": 0,
+        "p98": 0.4,
+        "step": 0.01,
+    },
+    {
+        "key": "blend_share_gasoil",
+        "group": "blend",
+        "label": "Доля газойля",
+        "unit": "доля",
+        "p2": 0,
+        "p98": 0.4,
+        "step": 0.01,
+    },
+    {
+        "key": "blend_additive_pct",
+        "group": "blend",
+        "label": "Присадка",
+        "unit": "%",
+        "p2": 0,
+        "p98": 3,
+        "step": 0.1,
+    },
 ]
 
 
@@ -53,7 +99,9 @@ def _sentinel(value: float | None) -> bool:
     return any(abs(value - item) < 0.05 for item in (24.9, 307, 251, 252, 240))
 
 
-def _tag(code: str, ts: str, value: Any, unit: str | None, source: str, flag: str | None = None) -> dict[str, Any]:
+def _tag(
+    code: str, ts: str, value: Any, unit: str | None, source: str, flag: str | None = None
+) -> dict[str, Any]:
     number = _num(value)
     return {
         "tagCode": code,
@@ -131,8 +179,24 @@ def state_payload(app: AppState, t_point: datetime) -> dict[str, Any]:
         _tag("F65", sample_iso, row.get("F65_lag0"), "т/ч", "kip"),
         _tag("W70", sample_iso, row.get("W70_lag0"), None, "kip"),
         _tag("t95", sample_iso, row.get("t95_same_sample"), "°C", "lims"),
-        _tag("cetane", sample_iso, row.get("cetane_same_sample") if _num(row.get("cetane_same_sample")) is not None else row.get("cetane_last"), None, "lims"),
-        _tag("d15", sample_iso, row.get("d15_same_sample") if _num(row.get("d15_same_sample")) is not None else row.get("d15_last"), "кг/м³", "lims"),
+        _tag(
+            "cetane",
+            sample_iso,
+            row.get("cetane_same_sample")
+            if _num(row.get("cetane_same_sample")) is not None
+            else row.get("cetane_last"),
+            None,
+            "lims",
+        ),
+        _tag(
+            "d15",
+            sample_iso,
+            row.get("d15_same_sample")
+            if _num(row.get("d15_same_sample")) is not None
+            else row.get("d15_last"),
+            "кг/м³",
+            "lims",
+        ),
         _tag("feed_sulfur", sample_iso, row.get("feed_sulfur"), "%", "lims"),
     ]
     recent = app.store.frame[app.store.frame["sample_ts"] <= sample].tail(48)
@@ -149,7 +213,15 @@ def state_payload(app: AppState, t_point: datetime) -> dict[str, Any]:
         if not past.empty:
             pak_ts = past.iloc[-1]["date"].to_pydatetime()
     pak_age = max(0.0, (asked - pak_ts.astimezone(UTC)).total_seconds() / 3600.0)
-    pak_status = "missing" if pak_age > 24 * 14 else "stale" if pak_age > 6 else "warn" if pak_age > 2 else "ok"
+    pak_status = (
+        "missing"
+        if pak_age > 24 * 14
+        else "stale"
+        if pak_age > 6
+        else "warn"
+        if pak_age > 2
+        else "ok"
+    )
     pak_iso = _iso(pak_ts)
     freshness = [
         {
@@ -270,12 +342,21 @@ def models_payload(app: AppState) -> list[dict[str, Any]]:
     ]
 
 
-def start_run(app: AppState, kind: ScenarioKind, t_point: datetime, overrides: dict[str, float], seed: int, season: str) -> str:
+def start_run(
+    app: AppState,
+    kind: ScenarioKind,
+    t_point: datetime,
+    overrides: dict[str, float],
+    seed: int,
+    season: str,
+) -> str:
     if app.registry is None or app.store is None:
         raise EnvironmentError(app.error or "models_not_loaded")
     if app.active:
         raise RuntimeError("run_already_active")
-    scenario = resolve_scenario(kind, t_point=t_point, overrides=overrides, seed=seed, season=season)
+    scenario = resolve_scenario(
+        kind, t_point=t_point, overrides=overrides, seed=seed, season=season
+    )
     sink = MemorySink()
     app.active = "starting"
     try:

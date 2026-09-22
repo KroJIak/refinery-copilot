@@ -55,6 +55,20 @@ class QualityAgent:
         delta = preset_feed_delta(ctx.scenario.kind)
         df = _row_frame(ctx.row, delta)
         reg = ctx.registry
+        control_map = {
+            "24-2000.P8": ("P8", "P8_lag0"),
+            "24-2000.T11": ("T5", "T5_lag0"),
+            "24-2000.F19": ("P13", "P13_lag0"),
+        }
+        for key, value in ctx.scenario.overrides.items():
+            mapped = control_map.get(key)
+            target = _finite(value)
+            if mapped is None or target is None:
+                continue
+            prefix, column = mapped
+            baseline = _finite(df.iloc[0].get(column))
+            if baseline is not None:
+                df = bump_tag(df, prefix, reg.features_whatif, target - baseline)
         xq = feature_matrix(df, reg.features_quantile)
         p10, p50, p90 = reg.predict_quantiles(xq)
         spec_risk = max(0.0, (p90 - SULFUR_LIMIT) / SULFUR_LIMIT) + max(
@@ -115,6 +129,22 @@ class QualityAgent:
             finished_at=finished,
             duration_ms=max(1, int((finished - started).total_seconds() * 1000)),
         )
+
+
+def _finite(value) -> float | None:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return number if np.isfinite(number) else None
+
+
+def _finite(value) -> float | None:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return number if np.isfinite(number) else None
 
 
 def _t95(df: pd.DataFrame, ctx: RunContext) -> float:
