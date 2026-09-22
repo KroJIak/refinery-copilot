@@ -2,7 +2,17 @@
 .DEFAULT_GOAL := help
 API_PORT ?= 8000
 VITE_PORT ?= 5173
+PORT ?=
 .PHONY: help data train demo run ui test lint up down mocks
+
+# PORT перекрывает порт цели: make ui PORT=5174, make run PORT=8001
+ui_port = $(if $(PORT),$(PORT),$(VITE_PORT))
+api_port = $(if $(PORT),$(PORT),$(API_PORT))
+
+define require-free-port
+	@python3 -c "import socket,sys; p=int(sys.argv[1]); s=socket.socket(); s.settimeout(0.4); r=s.connect_ex(('127.0.0.1',p)); s.close(); sys.exit(0 if r else 1)" $(1) \
+		|| { echo "порт $(1) занят. укажите другой: make $(2) PORT=...."; exit 1; }
+endef
 
 help: ## показать список целей
 	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z_-]+:.*## / {printf "  \033[36m%-8s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -19,11 +29,13 @@ train: .venv ## обучение зафиксированных бандлов �
 demo: .venv ## 4 демо-сценария, включая отказ bad_data
 	uv run python -m refinery_core.cli demo
 
-run: .venv ## api на :$(API_PORT)
-	uv run uvicorn app.main:app --app-dir backend/src --host 0.0.0.0 --port $(API_PORT)
+run: .venv ## api на :$(API_PORT), другой порт: make run PORT=8001
+	$(call require-free-port,$(api_port),run)
+	uv run uvicorn app.main:app --app-dir backend/src --host 0.0.0.0 --port $(api_port)
 
-ui: .venv ## vite dev
-	cd frontend && npm run dev -- --port $(VITE_PORT)
+ui: .venv ## сайт на :$(VITE_PORT), другой порт: make ui PORT=5174
+	$(call require-free-port,$(ui_port),ui)
+	cd frontend && npm run dev -- --port $(ui_port) --strictPort
 
 test: .venv ## pytest ядра
 	uv run pytest
@@ -38,5 +50,6 @@ up: ## docker compose
 down: ## остановить контейнеры
 	docker compose down
 
-mocks: ## поднять интерфейс без api
-	cd frontend && VITE_USE_MOCKS=true npm run dev
+mocks: ## поднять интерфейс без api, другой порт: make mocks PORT=5174
+	$(call require-free-port,$(ui_port),mocks)
+	cd frontend && VITE_USE_MOCKS=true npm run dev -- --port $(ui_port) --strictPort
