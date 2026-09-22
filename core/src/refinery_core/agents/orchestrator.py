@@ -52,10 +52,10 @@ class Orchestrator:
         reasons, details = collect(ctx)
         slices = ctx.steps["data"].output["slices"]
         state = [
-            {"tag": "T5", "value": slices.get("T5"), "unit": "°C"},
-            {"tag": "F26", "value": slices.get("F26"), "unit": None},
-            {"tag": "P8", "value": slices.get("P8"), "unit": None},
-            {"tag": "feed_sulfur", "value": slices.get("feed_sulfur"), "unit": "мг/кг"},
+            {"tag": "24-2000.T11", "value": slices.get("T5"), "unit": "°C"},
+            {"tag": "24-2000.F26", "value": slices.get("F26"), "unit": "т/ч"},
+            {"tag": "24-2000.F19", "value": slices.get("P13"), "unit": "МПа"},
+            {"tag": "feed_sulfur", "value": slices.get("feed_sulfur"), "unit": "% масс."},
         ]
         risks = []
         if "quality" in ctx.steps:
@@ -124,8 +124,8 @@ class Orchestrator:
         if chosen["delta_T5"] or (chosen["T5"] == t5 and not chosen.get("delta_F26") and not chosen.get("delta_P13")):
             actions.append(
                 {
-                    "tag": "24-2000.T5",
-                    "label": "температура реактора",
+                    "tag": "24-2000.T11",
+                    "label": "температура входа реактора",
                     "unit": "°C",
                     "current_value": t5,
                     "recommended_value": chosen["T5"],
@@ -136,8 +136,8 @@ class Orchestrator:
             actions.append(
                 {
                     "tag": "24-2000.F26",
-                    "label": "расход сырья",
-                    "unit": None,
+                    "label": "расход продукта",
+                    "unit": "т/ч",
                     "current_value": opt.get("F26"),
                     "recommended_value": chosen.get("F26"),
                     "delta_pct": None,
@@ -146,9 +146,9 @@ class Orchestrator:
         if chosen.get("delta_P13"):
             actions.append(
                 {
-                    "tag": "24-2000.P13",
-                    "label": "давление",
-                    "unit": None,
+                    "tag": "24-2000.F19",
+                    "label": "давление реактора",
+                    "unit": "МПа",
                     "current_value": opt.get("P13"),
                     "recommended_value": chosen.get("P13"),
                     "delta_pct": None,
@@ -157,8 +157,8 @@ class Orchestrator:
         if not actions:
             actions.append(
                 {
-                    "tag": "24-2000.T5",
-                    "label": "температура реактора",
+                    "tag": "24-2000.T11",
+                    "label": "температура входа реактора",
                     "unit": "°C",
                     "current_value": t5,
                     "recommended_value": chosen["T5"],
@@ -176,15 +176,16 @@ class Orchestrator:
                 "margin_to_spec": chosen["margin"],
             }
         ]
-        sulfur_ok = chosen["sulfur_p90"] <= SULFUR_LIMIT
-        t95_ok = chosen["t95_p90"] <= T95_LIMIT
+        # Жёсткий порог — ожидаемая сера (p50). Верх вилки остаётся в карточке как неопределённость.
+        sulfur_ok = chosen["sulfur_p50"] <= SULFUR_LIMIT
+        t95_ok = chosen["t95_p50"] <= T95_LIMIT
         checks = [
             {
                 "constraint_id": "sulfur_max",
                 "description": "сера ≤ 10 мг/кг",
                 "limit": SULFUR_LIMIT,
                 "unit": "мг/кг",
-                "value": chosen["sulfur_p90"],
+                "value": chosen["sulfur_p50"],
                 "passed": sulfur_ok,
             },
             {
@@ -192,7 +193,7 @@ class Orchestrator:
                 "description": "T95 ≤ 360 °C",
                 "limit": T95_LIMIT,
                 "unit": "°C",
-                "value": chosen["t95_p90"],
+                "value": chosen["t95_p50"],
                 "passed": t95_ok,
             },
             {
@@ -281,11 +282,11 @@ class Orchestrator:
         for i, c in enumerate(sorted(feasible, key=lambda x: -x["margin"])[:4]):
             alts.append(
                 {
-                    "label": f"T5 {c['delta_T5']:+.0f} °C",
+                    "label": f"T {c['delta_T5']:+.0f} °C",
                     "actions": [
                         {
-                            "tag": "24-2000.T5",
-                            "label": "температура реактора",
+                            "tag": "24-2000.T11",
+                            "label": "температура входа реактора",
                             "unit": "°C",
                             "current_value": t5,
                             "recommended_value": c["T5"],

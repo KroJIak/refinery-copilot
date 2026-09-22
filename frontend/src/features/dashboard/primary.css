@@ -514,12 +514,13 @@
   padding: 19px;
   grid-column: 1 / 2;
   grid-row: 1 / 2;
-  width: 204px;
+  width: auto;
+  min-width: 0;
   position: relative;
   z-index: 2;
 }
 .scenarios-page--recommendation {
-  grid-template-columns: 204px minmax(0, 1fr) 285px;
+  grid-template-columns: minmax(150px, 190px) minmax(0, 1fr) minmax(180px, 240px);
 }
 .scenarios-page--recommendation .scenarios-main {
   grid-column: 2;

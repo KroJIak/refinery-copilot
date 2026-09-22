@@ -35,8 +35,8 @@ const stateLabels: Record<SensorVisualState, string> = {
 };
 
 const influencePaths: Record<string, string> = {
-  '24-2000.P8': 'M890 283 V236 H1080 V326 H1330 V445',
   '24-2000.T11': 'M822 283 V236 H1080 V326 H1330 V445',
+  '24-2000.F26': 'M900 283 V236 H1080 V326 H1330 V445',
   '24-2000.F19': 'M960 283 V236 H1080 V326 H1330 V445',
   avt: 'M510 283 V236 H1080 V326 H1330 V445',
   blend_additive_pct: 'M1210 225 V326 H1330 V445',
@@ -110,9 +110,9 @@ export function ProcessDiagram({ sensors, latest, selected, influence, getState,
             {influence !== 'off' && <path className="process-influence" d={influencePaths[influence]} />}
           </g>
 
-          <Stage x={65} y={285} width={205} height={160} title="Нефть" lines={['crude_feed_rate_tph']} tone="crude" Icon={IconGasStation} />
-          <Stage x={375} y={265} width={280} height={205} title="АВТ" lines={['Температура печи', 'Давление колонны', 'Выход дизеля']} tone="process" Icon={IconBuildingFactory2} />
-          <Stage x={765} y={265} width={280} height={205} title="Гидроочистка" lines={['Температура реактора', 'Давление', 'Перепад давления']} tone="process" Icon={IconFlask} />
+          <Stage x={65} y={285} width={205} height={160} title="Нефть" lines={['Сырьё АВТ']} tone="crude" Icon={IconGasStation} />
+          <Stage x={375} y={265} width={280} height={205} title="АВТ" lines={['Температура печи', 'Расход колонны', 'Сера сырья']} tone="process" Icon={IconBuildingFactory2} />
+          <Stage x={765} y={265} width={280} height={205} title="Гидроочистка" lines={['Температура входа', 'Расход продукта', 'Давление реактора']} tone="process" Icon={IconFlask} />
           <Stage x={1145} y={265} width={280} height={205} title="Блендинг" lines={['Доли компонентов', 'Дозировка присадок']} tone="process" Icon={IconStack2} />
           <Stage x={1380} y={505} width={190} height={175} title="Товарный резервуар" lines={['Контроль качества', 'Сера ≤ 10 мг/кг', 'T95 ≤ 360 °C', 'Цетановое число ≥ 51']} tone="product" Icon={IconDroplet} />
 
@@ -134,7 +134,7 @@ export function ProcessDiagram({ sensors, latest, selected, influence, getState,
                 onSelect(sensor.tag);
               }
             }}>
-              <title>{label}{sensor.tag === 'D10' ? ' · мёртвый канал' : ''}</title>
+              <title>{label}</title>
               <circle className="sensor-hit-area" cx={sensor.x} cy={sensor.y} r="21" />
               {sensor.lab
                 ? <rect className={`sensor-dot ${visualState} ${active ? 'selected' : ''}`} x={sensor.x - 10} y={sensor.y - 10} width="20" height="20" rx="4" />

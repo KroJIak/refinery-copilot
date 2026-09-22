@@ -108,12 +108,13 @@ def test_season_changes_cetane_check(store, registry, settings):
     assert s_cetane["passed"] is None or isinstance(s_cetane["value"], float)
 
 
-def test_sulfur_check_uses_upper_bound(store, registry, settings):
+def test_sulfur_check_uses_expected_value(store, registry, settings):
     result = run_pipeline(resolve_scenario("quality_risk"), store, registry, settings=settings)
     sulfur = next(c for c in result.recommendation["checks"] if c["constraint_id"] == "sulfur_max")
     effect = result.recommendation["effects"][0]
-    assert sulfur["value"] == effect["p90"]
-    assert sulfur["passed"] == (effect["p90"] <= 10)
+    assert sulfur["value"] == effect["action_p50"]
+    assert sulfur["passed"] == (effect["action_p50"] <= 10)
+    assert effect["p90"] != effect["action_p50"]
     labels = {a["label"] for a in result.recommendation["actions"]}
     assert labels
     opt = result.ctx.steps["optimization"].output

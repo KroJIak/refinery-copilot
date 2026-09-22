@@ -61,12 +61,9 @@ EXPECTED_OUTCOME: dict[ScenarioKind, Decision] = {
 
 CONTROLLED_TAGS = frozenset(
     {
-        "24-2000.P8",
         "24-2000.T11",
+        "24-2000.F26",
         "24-2000.F19",
-        "crude_feed_rate_tph",
-        "avt_furnace_outlet_temp_c",
-        "avt_column_pressure_mpa_abs",
         "blend_share_kerosene",
         "blend_share_gasoil",
         "blend_additive_pct",

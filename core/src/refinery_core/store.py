@@ -56,10 +56,10 @@ class SliceStore:
                 {
                     "ts": rec["date"].strftime("%Y-%m-%dT%H:%M:%SZ"),
                     "T5": _clean(rec.get("T5")),
-                    "F26": _clean(rec.get("F26")),
-                    "P8": _clean(rec.get("P8")),
                     "T11": _clean(rec.get("T11")),
-                    "F19": _clean(rec.get("F19")),
+                    "F26": _clean(rec.get("F26")),
+                    "F19": _clean(rec.get("P13")),
+                    "P8": _clean(rec.get("P8")),
                 }
             )
         return rows[-18:]

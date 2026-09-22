@@ -11,9 +11,10 @@ const format = (value: number, maximumFractionDigits = 2) => new Intl.NumberForm
 
 export function WhatIfPage() {
   const store = useAppStore();
-  const [query, setQuery] = useSearchParams();
+  const [query] = useSearchParams();
   const [overrides, setOverrides] = useState<Record<string, number> | null>(null);
   const initialized = useRef<string | null>(null);
+  const [custom, setCustom] = useState(false);
   const immediate = useRef(true);
   const evaluationTimer = useRef<number | null>(null);
   const variables = store.controlledVariables;
@@ -24,6 +25,7 @@ export function WhatIfPage() {
     variables.forEach((variable) => {
       const value = latest.get(variable.key)?.value;
       if (value != null) values[variable.key] = value;
+      else if (variable.key.startsWith("blend_")) values[variable.key] = 0;
     });
     Object.entries(preset?.overrides ?? {}).forEach(([key, value]) => {
       if (variables.some((variable) => variable.key === key)) values[key] = value;
@@ -32,20 +34,19 @@ export function WhatIfPage() {
   }, [preset, store.tags, variables]);
 
   useEffect(() => {
-    const tPoint = query.get('tp');
-    if (tPoint && !Number.isNaN(Date.parse(tPoint)) && store.tPoint !== tPoint && !store.loading) void store.loadState({ tPoint });
-  }, [query, store.loadState, store.loading, store.tPoint]);
-
-  useEffect(() => {
     if (!store.tPoint || !variables.length || !Object.keys(baseline).length || initialized.current === store.tPoint) return;
-    const next = { ...baseline, ...store.whatifDraft };
-    query.get('o')?.split(',').forEach((pair) => {
-      const split = pair.lastIndexOf(':');
-      const key = pair.slice(0, split);
-      const value = Number(pair.slice(split + 1));
-      if (split > 0 && Number.isFinite(value) && variables.some((variable) => variable.key === key)) next[key] = value;
-    });
+    const next = { ...baseline };
+    if (initialized.current === null) {
+      Object.assign(next, store.whatifDraft);
+      query.get('o')?.split(',').forEach((pair) => {
+        const split = pair.lastIndexOf(':');
+        const key = pair.slice(0, split);
+        const value = Number(pair.slice(split + 1));
+        if (split > 0 && Number.isFinite(value) && variables.some((variable) => variable.key === key)) next[key] = value;
+      });
+    }
     initialized.current = store.tPoint;
+    setCustom(variables.some((variable) => Math.abs((next[variable.key] ?? 0) - (baseline[variable.key] ?? 0)) > 1e-6));
     setOverrides(next);
   }, [baseline, query, store.tPoint, store.whatifDraft, variables]);
 
@@ -53,14 +54,13 @@ export function WhatIfPage() {
     if (!overrides || !store.tPoint) return;
     evaluationTimer.current = window.setTimeout(() => {
       void store.evaluateWhatif(overrides);
-      setQuery({ tp: store.tPoint!, o: Object.entries(overrides).map(([key, value]) => `${key}:${value}`).join(',') }, { replace: true });
     }, immediate.current ? 0 : 150);
     immediate.current = false;
     return () => {
       if (evaluationTimer.current !== null) window.clearTimeout(evaluationTimer.current);
       evaluationTimer.current = null;
     };
-  }, [overrides, setQuery, store.evaluateWhatif, store.tPoint]);
+  }, [overrides, store.evaluateWhatif, store.tPoint]);
 
   const change = (variable: ControlledVariable, raw: number) => {
     if (!overrides || !Number.isFinite(raw)) return;
@@ -71,22 +71,23 @@ export function WhatIfPage() {
       next[variable.key] = Math.max(0, Math.min(1, raw));
       if ((next[variable.key] ?? 0) + (next[other] ?? 0) > 1) next[other] = 1 - (next[variable.key] ?? 0);
     }
+    setCustom(true);
     setOverrides(next);
   };
 
   const applyPreset = async (kind: typeof store.scenarios[number]['kind']) => {
     if (kind === store.kind) {
       immediate.current = true;
+      setCustom(false);
       setOverrides({ ...baseline });
       return;
     }
     const nextPreset = store.scenarios.find((item) => item.kind === kind);
     if (!nextPreset) return;
     initialized.current = null;
+    setCustom(false);
     immediate.current = true;
     store.setWhatifDraft({});
-    setOverrides(null);
-    setQuery({ tp: nextPreset.tPoint }, { replace: true });
     await store.selectScenario(kind);
   };
 
@@ -105,7 +106,7 @@ export function WhatIfPage() {
     {store.whatifError && <div role="alert" className="whatif-verdict bad">{store.whatifError}</div>}
     <div className="whatif-layout">
       <section className="whatif-card">
-        <div className="whatif-card-title"><h2>Управляемые переменные</h2><div className="whatif-presets" aria-label="Сценарии «Что если»">{store.scenarios.filter((item) => ['normal', 'quality_risk', 'sour_crude'].includes(item.kind)).map((item) => <button key={item.kind} className={`whatif-preset ${item.kind === store.kind ? 'active' : ''}`} aria-pressed={item.kind === store.kind} title={item.description} disabled={store.loading} onClick={() => void applyPreset(item.kind)}>{item.label}</button>)}</div></div>
+        <div className="whatif-card-title"><h2>Управляемые переменные</h2><div className="whatif-presets" aria-label="Сценарии «Что если»">{store.scenarios.filter((item) => ['normal', 'quality_risk', 'sour_crude'].includes(item.kind)).map((item) => <button key={item.kind} className={`whatif-preset ${!custom && item.kind === store.kind ? 'active' : ''}`} aria-pressed={!custom && item.kind === store.kind} title={item.description} disabled={store.loading} onClick={() => void applyPreset(item.kind)}>{item.label}</button>)}</div></div>
         {!variables.length && <p className="model-note">Загрузка управляемых переменных…</p>}
         {(['hdu', 'avt', 'blend'] as const).map((group) => <div className="whatif-group" key={group}>
           <div className="whatif-group-title">{group === 'hdu' ? 'Гидроочистка' : group === 'avt' ? 'АВТ' : 'Блендинг'}</div>
@@ -117,9 +118,8 @@ export function WhatIfPage() {
       <section className="whatif-card whatif-result-card">
         <div className="whatif-result-heading"><IconAdjustmentsHorizontal aria-hidden="true" /><div><h2>Результат расчёта</h2><p>Числа обновляются после изменения параметров.</p></div></div>
         {current ? <div className={`whatif-verdict ${current.feasible ? '' : 'bad'}`} role="status">{current.feasible ? <IconCircleCheck aria-hidden="true" /> : <IconCircleX aria-hidden="true" />}<span>{current.feasible ? 'Вариант допустим' : 'Есть нарушения ограничений'}</span><small>{violations.length ? violations.map(violationMessage).join(' · ') : 'Ограничения не нарушены'}</small></div> : <div className="model-note">Ожидание первого расчёта</div>}
-        <div className="whatif-quality">{quality.map((point) => <QualityCard key={point.target} point={point} baseline={store.whatifResult?.baseline.find((item) => item.target === point.target)} />)}</div>
-        {current && <div className="cost-box">Условная стоимость: {format(current.costIndex)}<small>Индекс для сравнения вариантов, не рыночная цена.</small></div>}
-        <button className="whatif-button" disabled={!overrides} onClick={() => { immediate.current = true; setOverrides({ ...baseline }); }}>Вернуть значения сценария</button>
+        <div className="whatif-quality">{quality.map((point) => <QualityCard key={point.target} point={point} />)}</div>
+        {current && <div className="cost-box">Условная стоимость: {format(current.costIndex)}<small>Индекс для сравнения вариантов.</small></div>}
         {store.card && <p><Link to="/recommendation">Открыть карточку рекомендации</Link></p>}
         <p className="model-note">Модельная оценка не управляет установкой и требует подтверждения технологом.</p>
       </section>
@@ -139,7 +139,7 @@ function Control({ variable, value, invalid, onChange }: { variable: ControlledV
   </div>;
 }
 
-function QualityCard({ point, baseline }: { point: WhatifQualityPoint; baseline?: WhatifQualityPoint }) {
+function QualityCard({ point }: { point: WhatifQualityPoint }) {
   const spec = point.target === 'sulfur' ? 'Не более 10 мг/кг' : point.target === 't95' ? 'Не более 360 °C' : point.target === 'cetane' ? 'Не менее 51' : 'По рабочему диапазону';
-  return <article className="quality-item"><h3>{targetLabels[point.target]} · {point.unit}</h3><div className="quality-numbers"><span className="quality-p50">{format(point.p50)}</span></div><p className="quality-range">Ожидаемый диапазон: {format(point.p10)}–{format(point.p90)}</p>{baseline && <p className="quality-range">В сценарии: {format(baseline.p50)}</p>}<p className="quality-risk">{spec}</p></article>;
+  return <article className="quality-item"><h3>{targetLabels[point.target]} · {point.unit}</h3><div className="quality-numbers"><span className="quality-p50">{format(point.p50)}</span></div><p className="quality-range">Ожидаемый диапазон: {format(point.p10)}–{format(point.p90)}</p><p className="quality-risk">{spec}</p></article>;
 }

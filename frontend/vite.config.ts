@@ -9,7 +9,9 @@ function backendOrigin(url: string): string {
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
-  const target = backendOrigin(env.VITE_PROXY_TARGET || env.BACKEND_URL || 'http://localhost:8000');
+  const target = backendOrigin(
+    process.env.VITE_PROXY_TARGET || env.VITE_PROXY_TARGET || env.BACKEND_URL || 'http://localhost:8000',
+  );
 
   return {
     plugins: [react(), tailwindcss()],

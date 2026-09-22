@@ -29,9 +29,13 @@ export const targetLabel: Record<string, string> = {
   d15: "Плотность",
   Q21: "Сера",
   "24-2000.Q21": "Сера",
-  feed_rate: "Расход",
-  F19: "Расход",
-  "24-2000.F19": "Расход",
+  feed_sulfur: "Сера сырья",
+  "24-2000.T11": "Температура входа",
+  "24-2000.F26": "Расход продукта",
+  "24-2000.F19": "Давление реактора",
+  T5: "Температура реактора",
+  F26: "Расход",
+  P8: "Давление",
 };
 export const shortTag = (tag: string, label?: string) =>
   label || (tag.startsWith("24-2000.") ? tag.slice(8) : tag);
@@ -258,11 +262,11 @@ export function RecommendationCard({
           Модельная оценка; история не подтверждает действий, которых в ней не
           было.
         </p>
-        {quality.some((item) => item.shapTopK.length) && (
+        {quality.some((item) => item.shapTopK?.length) && (
           <details className="shap-details">
             <summary>Факторы влияния</summary>
             {quality.flatMap((item) =>
-              item.shapTopK.slice(0, 3).map((shap) => (
+              item.shapTopK?.slice(0, 3).map((shap) => (
                 <div
                   className="shap-row"
                   key={`${item.target}-${shap.feature}`}
@@ -321,7 +325,7 @@ export function RecommendationCard({
       <Block title="Объяснение" icon={IconFileText}>
         <p>{card.explanation}</p>
       </Block>
-      {!!card.alternatives.length && (
+      {!!card.alternatives?.length && (
         <Block title="Альтернативы" icon={IconGitBranch}>
           {card.alternatives.map((alt) => (
             <div className="alternative-row" key={alt.label}>

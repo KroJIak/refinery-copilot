@@ -3,7 +3,7 @@
 API_PORT ?= 8000
 VITE_PORT ?= 5173
 PORT ?=
-.PHONY: help data train demo run ui test lint up down
+.PHONY: help data train demo run ui web test lint up down
 
 # PORT перекрывает порт цели: make ui PORT=5174, make run PORT=8001
 ui_port = $(if $(PORT),$(PORT),$(VITE_PORT))
@@ -33,9 +33,14 @@ run: .venv ## запустить сервер на порту 8000. если з�
 	$(call require-free-port,$(api_port),run)
 	uv run uvicorn app.main:app --app-dir backend/src --host 0.0.0.0 --port $(api_port)
 
-ui: .venv ## открыть сайт на порту 5173. если занят: make ui PORT=5174
+ui: .venv ## только страница, без расчёта. для сайта целиком: make web
 	$(call require-free-port,$(ui_port),ui)
 	cd frontend && npm run dev -- --port $(ui_port) --strictPort
+
+web: .venv ## сайт и расчёт одной командой: http://127.0.0.1:5173
+	$(call require-free-port,$(api_port),web)
+	$(call require-free-port,$(ui_port),web)
+	@bash -eu -c 'cleanup() { [ -n "$${api:-}" ] && kill "$$api" 2>/dev/null || true; [ -n "$${ui:-}" ] && kill "$$ui" 2>/dev/null || true; wait "$${api:-}" "$${ui:-}" 2>/dev/null || true; }; trap cleanup EXIT INT TERM; uv run uvicorn app.main:app --app-dir backend/src --host 127.0.0.1 --port $(api_port) & api=$$!; ok=0; for _ in $$(seq 1 80); do python3 -c "import urllib.request; urllib.request.urlopen(\"http://127.0.0.1:$(api_port)/health\", timeout=0.4)" >/dev/null 2>&1 && ok=1 && break; sleep 0.25; done; [ "$$ok" = 1 ]; echo "расчёт http://127.0.0.1:$(api_port)  сайт http://127.0.0.1:$(ui_port)"; cd frontend && VITE_PROXY_TARGET=http://127.0.0.1:$(api_port) npm run dev -- --host 127.0.0.1 --port $(ui_port) --strictPort & ui=$$!; wait $$ui'
 
 test: .venv ## pytest ядра
 	uv run pytest

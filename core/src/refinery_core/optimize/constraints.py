@@ -20,3 +20,15 @@ def season_of(t_point: datetime, override: str = "auto") -> str:
 
 def cetane_floor(season: str) -> float:
     return CETANE_WINTER if season == "winter" else CETANE_SUMMER
+
+
+# Модельный блендинг: материалов по резервуарам организаторы не выдали.
+# Числа — явные допущения для эксперимента, не лабораторные факты.
+# Керосин легче и чище, газойль тяжелее и сернистее, присадка поднимает ЦЧ.
+BLEND_KEROSENE = {"sulfur": 8.0, "t95": 220.0, "cetane": 45.0, "d15": 800.0}
+BLEND_GASOIL = {"sulfur": 20.0, "t95": 370.0, "cetane": 48.0, "d15": 860.0}
+# 1 % присадки ≈ +2.5 пункта ЦЧ внутри разрешённых 0–3 %.
+ADDITIVE_CETANE_PER_PCT = 2.5
+# Стоимость: 1 т присадки в 100 раз дороже 1 т ДТ, индекс нормирован на долю.
+ADDITIVE_COST_PER_PCT = 1.0
+SULFUR_ENERGY = 0.08

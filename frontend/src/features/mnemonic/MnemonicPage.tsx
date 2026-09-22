@@ -34,7 +34,7 @@ export function MnemonicPage() {
   }
   const range = controlledVariables.find((v) => v.key === selected);
   return <main className="mnemonic-page">
-    <header className="mnemonic-head"><div><h1>Мнемосхема</h1><p>Упрощённая схема, не чертёж установки</p></div><div className="mnemonic-actions"><label>Путь влияния <select className="mnemonic-select" value={influence} onChange={(e) => setInfluence(e.target.value)}><option value="off">выкл</option><option value="24-2000.P8">P8</option><option value="24-2000.T11">T11</option><option value="24-2000.F19">F19</option><option value="avt">АВТ</option><option value="blend_additive_pct">Присадка</option></select></label><button className="mnemonic-button" onClick={() => void loadState({ tPoint: tPoint ?? undefined })}>Обновить</button></div></header>
+    <header className="mnemonic-head"><div><h1>Мнемосхема</h1><p>Упрощённая схема, не чертёж установки</p></div><div className="mnemonic-actions"><label>Путь влияния <select className="mnemonic-select" value={influence} onChange={(e) => setInfluence(e.target.value)}><option value="off">выкл</option><option value="24-2000.T11">Температура входа</option><option value="24-2000.F26">Расход</option><option value="24-2000.F19">Давление</option><option value="avt">АВТ</option><option value="blend_additive_pct">Присадка</option></select></label><button className="mnemonic-button" onClick={() => void loadState({ tPoint: tPoint ?? undefined })}>Обновить</button></div></header>
     {error && <p role="alert">{error}</p>}
     {loading && !tags.length && <p>Загрузка состояния установки…</p>}
     <section className="mnemonic-viewport">
