@@ -1,6 +1,6 @@
-import { Blend, Droplets, Factory, FlaskConical, Fuel, Minus, Plus, RotateCcw } from 'lucide-react';
+import { IconBuildingFactory2, IconDroplet, IconFlask, IconGasStation, IconMinus, IconPlus, IconRotate, IconStack2 } from '@tabler/icons-react';
 import { TransformComponent, TransformWrapper } from 'react-zoom-pan-pinch';
-import type { LucideIcon } from 'lucide-react';
+import type { Icon } from '@tabler/icons-react';
 import type { TagPoint } from '@/types';
 import type { SensorDefinition } from './sensors';
 
@@ -24,7 +24,7 @@ type StageProps = {
   title: string;
   lines: string[];
   tone: 'crude' | 'process' | 'product';
-  Icon: LucideIcon;
+  Icon: Icon;
 };
 
 const stateLabels: Record<SensorVisualState, string> = {
@@ -74,9 +74,9 @@ export function ProcessDiagram({ sensors, latest, selected, influence, getState,
   >
     {({ zoomIn, zoomOut, resetTransform }) => <>
       <div className="mnemonic-zoom" aria-label="Масштаб схемы">
-        <button className="mnemonic-control" type="button" onClick={() => zoomIn()} aria-label="Увеличить схему"><Plus aria-hidden="true" /></button>
-        <button className="mnemonic-control" type="button" onClick={() => zoomOut()} aria-label="Уменьшить схему"><Minus aria-hidden="true" /></button>
-        <button className="mnemonic-control mnemonic-reset" type="button" onClick={() => resetTransform()} aria-label="Сбросить масштаб" title="Сбросить масштаб"><RotateCcw aria-hidden="true" /></button>
+        <button className="mnemonic-control" type="button" onClick={() => zoomIn()} aria-label="Увеличить схему"><IconPlus aria-hidden="true" /></button>
+        <button className="mnemonic-control" type="button" onClick={() => zoomOut()} aria-label="Уменьшить схему"><IconMinus aria-hidden="true" /></button>
+        <button className="mnemonic-control mnemonic-reset" type="button" onClick={() => resetTransform()} aria-label="Сбросить масштаб" title="Сбросить масштаб"><IconRotate aria-hidden="true" /></button>
       </div>
       <TransformComponent
         wrapperClass="mnemonic-transform"
@@ -110,11 +110,11 @@ export function ProcessDiagram({ sensors, latest, selected, influence, getState,
             {influence !== 'off' && <path className="process-influence" d={influencePaths[influence]} />}
           </g>
 
-          <Stage x={65} y={285} width={205} height={160} title="Нефть" lines={['crude_feed_rate_tph']} tone="crude" Icon={Fuel} />
-          <Stage x={375} y={265} width={280} height={205} title="АВТ" lines={['Температура печи', 'Давление колонны', 'Выход дизеля']} tone="process" Icon={Factory} />
-          <Stage x={765} y={265} width={280} height={205} title="Гидроочистка" lines={['Температура реактора', 'Давление', 'Перепад давления']} tone="process" Icon={FlaskConical} />
-          <Stage x={1145} y={265} width={280} height={205} title="Блендинг" lines={['Доли компонентов', 'Дозировка присадок']} tone="process" Icon={Blend} />
-          <Stage x={1380} y={505} width={190} height={175} title="Товарный резервуар" lines={['Контроль качества', 'Сера ≤ 10 мг/кг', 'T95 ≤ 360 °C', 'Цетановое число ≥ 51']} tone="product" Icon={Droplets} />
+          <Stage x={65} y={285} width={205} height={160} title="Нефть" lines={['crude_feed_rate_tph']} tone="crude" Icon={IconGasStation} />
+          <Stage x={375} y={265} width={280} height={205} title="АВТ" lines={['Температура печи', 'Давление колонны', 'Выход дизеля']} tone="process" Icon={IconBuildingFactory2} />
+          <Stage x={765} y={265} width={280} height={205} title="Гидроочистка" lines={['Температура реактора', 'Давление', 'Перепад давления']} tone="process" Icon={IconFlask} />
+          <Stage x={1145} y={265} width={280} height={205} title="Блендинг" lines={['Доли компонентов', 'Дозировка присадок']} tone="process" Icon={IconStack2} />
+          <Stage x={1380} y={505} width={190} height={175} title="Товарный резервуар" lines={['Контроль качества', 'Сера ≤ 10 мг/кг', 'T95 ≤ 360 °C', 'Цетановое число ≥ 51']} tone="product" Icon={IconDroplet} />
 
           <Marker x={405} y={220} variant="managed">Y</Marker><text className="process-marker-label" x="434" y="214">T печи, P колонны</text>
           <Marker x={405} y={513} variant="lab">ЛК</Marker><text className="process-marker-label" x="434" y="518">Качество дизеля</text>

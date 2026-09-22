@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { CheckCircle2, CircleX, SlidersHorizontal } from 'lucide-react';
+import { IconCircleCheck, IconCircleX, IconAdjustmentsHorizontal } from '@tabler/icons-react';
 import { useAppStore } from '@/store/store';
 import { violationMessage } from './messages';
 import type { ControlledVariable, WhatifQualityPoint } from '@/types';
@@ -100,7 +100,7 @@ export function WhatIfPage() {
   return <main className="whatif-page">
     <header className="whatif-head">
       <div><h1>Что если</h1><p>{store.tPoint ? `Снимок процесса · ${new Date(store.tPoint).toLocaleString('ru-RU', { timeZone: 'UTC' })} UTC` : 'Загрузка снимка процесса…'}</p></div>
-      <span className="whatif-button" aria-live="polite">{store.whatifLoading ? 'Расчёт…' : store.whatifResult ? `Расчёт ${store.whatifResult.elapsedMs} мс` : 'Нет расчёта'}</span>
+      <span className="whatif-button" aria-live="polite">{store.whatifLoading ? 'Считаем…' : store.whatifResult ? 'Готово' : 'Ждём расчёт'}</span>
     </header>
     {store.whatifError && <div role="alert" className="whatif-verdict bad">{store.whatifError}</div>}
     <div className="whatif-layout">
@@ -115,8 +115,8 @@ export function WhatIfPage() {
         <p className="model-note">Рабочий диапазон основан на истории. Это не паспортные пределы оборудования.</p>
       </section>
       <section className="whatif-card whatif-result-card">
-        <div className="whatif-result-heading"><SlidersHorizontal aria-hidden="true" /><div><h2>Результат расчёта</h2><p>Числа обновляются после изменения параметров.</p></div></div>
-        {current ? <div className={`whatif-verdict ${current.feasible ? '' : 'bad'}`} role="status">{current.feasible ? <CheckCircle2 aria-hidden="true" /> : <CircleX aria-hidden="true" />}<span>{current.feasible ? 'Вариант допустим' : 'Есть нарушения ограничений'}</span><small>{violations.length ? violations.map(violationMessage).join(' · ') : 'Ограничения не нарушены'}</small></div> : <div className="model-note">Ожидание первого расчёта</div>}
+        <div className="whatif-result-heading"><IconAdjustmentsHorizontal aria-hidden="true" /><div><h2>Результат расчёта</h2><p>Числа обновляются после изменения параметров.</p></div></div>
+        {current ? <div className={`whatif-verdict ${current.feasible ? '' : 'bad'}`} role="status">{current.feasible ? <IconCircleCheck aria-hidden="true" /> : <IconCircleX aria-hidden="true" />}<span>{current.feasible ? 'Вариант допустим' : 'Есть нарушения ограничений'}</span><small>{violations.length ? violations.map(violationMessage).join(' · ') : 'Ограничения не нарушены'}</small></div> : <div className="model-note">Ожидание первого расчёта</div>}
         <div className="whatif-quality">{quality.map((point) => <QualityCard key={point.target} point={point} baseline={store.whatifResult?.baseline.find((item) => item.target === point.target)} />)}</div>
         {current && <div className="cost-box">Условная стоимость: {format(current.costIndex)}<small>Индекс для сравнения вариантов, не рыночная цена.</small></div>}
         <button className="whatif-button" disabled={!overrides} onClick={() => { immediate.current = true; setOverrides({ ...baseline }); }}>Вернуть значения сценария</button>

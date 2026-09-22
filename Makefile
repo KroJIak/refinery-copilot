@@ -50,6 +50,5 @@ up: ## docker compose
 down: ## остановить контейнеры
 	docker compose down
 
-mocks: ## поднять интерфейс без api, другой порт: make mocks PORT=5174
-	$(call require-free-port,$(ui_port),mocks)
-	cd frontend && VITE_USE_MOCKS=true npm run dev -- --port $(ui_port) --strictPort
+mocks: ## не использовать: интерфейс ходит в api
+	@echo "заглушки отключены. запустите make run и make ui"

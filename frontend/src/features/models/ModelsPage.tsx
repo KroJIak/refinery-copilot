@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ChevronDown, ChevronUp, Info as InfoIcon, TriangleAlert } from 'lucide-react';
+import { IconChevronDown, IconChevronUp, IconInfoCircle, IconAlertTriangle } from '@tabler/icons-react';
 import { useAppStore } from '@/store/store';
 import { Tooltip } from '@/components/ui/Tooltip';
 import type { ModelArtifact } from '@/types';
@@ -17,7 +17,7 @@ const date = (value: string) => new Date(value).toLocaleDateString('ru-RU', { ti
 const algorithmName = (value: string) => value === 'lightgbm_quantile' ? 'LightGBM · квантильный прогноз' : 'Модель прогноза';
 
 function MetricInfo({ name }: { name: string }) {
-  return <Tooltip content={info[name]}><button type="button" className="model-info" aria-label={`О метрике ${name}`}><InfoIcon aria-hidden="true" /></button></Tooltip>;
+  return <Tooltip content={info[name]}><button type="button" className="model-info" aria-label={`О метрике ${name}`}><IconInfoCircle aria-hidden="true" /></button></Tooltip>;
 }
 
 export function ModelsPage() {
@@ -32,7 +32,7 @@ export function ModelsPage() {
   const inRange = (model: ModelArtifact) => !tPoint || (Date.parse(tPoint) >= Date.parse(model.trainedOnRange.start) && Date.parse(tPoint) <= Date.parse(model.trainedOnRange.end));
   return <main className="models-page"><header className="models-head"><div><h1>Модели</h1><p>Паспорта моделей · метрики на проверочном периоде</p></div></header>
     {modelsLoading && [1, 2, 3, 4].map((i) => <div className="model-skeleton" key={i} />)}
-    {modelsError && <div role="alert" className="models-error"><TriangleAlert aria-hidden="true" /> Реестр моделей не загружен. Повторите попытку позже.</div>}
+    {modelsError && <div role="alert" className="models-error"><IconAlertTriangle aria-hidden="true" /> Реестр моделей не загружен. Повторите попытку позже.</div>}
     {!modelsLoading && !modelsError && !models.length && <div className="models-placeholder">Модели ещё не обучены. Загрузите исторические данные и повторите обучение.</div>}
     {models.map((model) => <ModelCard key={model.artifactId} model={model} expanded={open === model.artifactId} outOfRange={!inRange(model)} versionMismatch={!!health && model.coreVersion !== health.core} onToggle={() => setOpen(open === model.artifactId ? null : model.artifactId)} onDownload={() => download(model)} />)}
     {!!models.length && Object.keys(targetNames).filter((target) => !models.some((model) => model.target === target)).map((target) => <div className="model-card models-placeholder" key={target}>{targetNames[target]} · модель не обучена</div>)}
@@ -41,7 +41,7 @@ export function ModelsPage() {
 }
 
 function ModelCard({ model, expanded, outOfRange, versionMismatch, onToggle, onDownload }: { model: ModelArtifact; expanded: boolean; outOfRange: boolean; versionMismatch: boolean; onToggle: () => void; onDownload: () => void }) {
-  return <article className="model-card"><div className="model-summary"><div><button className="model-title-button" onClick={onToggle} aria-expanded={expanded}>{model.artifactId} {expanded ? <ChevronUp aria-hidden="true" /> : <ChevronDown aria-hidden="true" />}</button><div className="model-target">{targetNames[model.target]}</div>{outOfRange && <div className="model-warning"><TriangleAlert aria-hidden="true" /> Вне периода обучения</div>}{versionMismatch && <div className="model-warning"><TriangleAlert aria-hidden="true" /> Версия реестра и сервиса различается</div>}</div>
+  return <article className="model-card"><div className="model-summary"><div><button className="model-title-button" onClick={onToggle} aria-expanded={expanded}>{model.artifactId} {expanded ? <IconChevronUp aria-hidden="true" /> : <IconChevronDown aria-hidden="true" />}</button><div className="model-target">{targetNames[model.target]}</div>{outOfRange && <div className="model-warning"><IconAlertTriangle aria-hidden="true" /> Вне периода обучения</div>}{versionMismatch && <div className="model-warning"><IconAlertTriangle aria-hidden="true" /> Версия реестра и сервиса различается</div>}</div>
     <div className="model-metric"><label>Средняя ошибка <MetricInfo name="mae" /></label><strong>{n(model.metrics.mae)}</strong></div>
     <div className="model-metric"><label>Покрытие диапазона <MetricInfo name="coverage" /></label><strong className={Math.abs(model.coverage - .8) <= .05 ? 'model-coverage-good' : 'model-coverage-warn'}>{n(model.coverage)}</strong></div>
     {model.metrics.winkler !== undefined && <div className="model-metric"><label>Точность диапазона <MetricInfo name="winkler" /></label><strong>{n(model.metrics.winkler)}</strong></div>}

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, CircleAlert, CircleCheck, CircleX, FileText, LoaderCircle, TriangleAlert } from "lucide-react";
+import { IconArrowRight, IconAlertCircle, IconCircleCheck, IconCircleX, IconFileText, IconLoader2, IconAlertTriangle } from "@tabler/icons-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAppStore } from "@/store";
 import { AgentPipeline } from "@/components/agents/AgentPipeline";
@@ -202,7 +202,7 @@ export function RecommendationPage() {
                         })}
                       </time>
                       <span>
-                        {entry.level === "warn" && <TriangleAlert className="inline-icon" aria-label="Предупреждение" />}
+                        {entry.level === "warn" && <IconAlertTriangle className="inline-icon" aria-label="Предупреждение" />}
                         {entry.message}
                       </span>
                     </div>
@@ -288,12 +288,12 @@ export function RecommendationPage() {
             <h1>Прогон не найден</h1>
             <p>Возможно, ссылка устарела или прогон был удалён.</p>
             <Link to="/recommendation">История прогонов</Link>
-            <Link to="/">На Обзор <ArrowRight className="inline-icon" aria-hidden="true" /></Link>
+            <Link to="/">На Обзор <IconArrowRight className="inline-icon" aria-hidden="true" /></Link>
           </div>
         ) : (
           <div className="scenarios-empty">
             <div className="scenarios-empty__symbol" aria-hidden="true">
-              <FileText aria-hidden="true" />
+              <IconFileText aria-hidden="true" />
             </div>
             <h1>
               {store.runs.length ? "Выберите прогон" : "Прогонов ещё не было"}
@@ -303,7 +303,7 @@ export function RecommendationPage() {
                 ? "Откройте результат в истории справа."
                 : "Нажмите «Получить рекомендацию» на Обзоре"}
             </p>
-            <Link to="/">На Обзор <ArrowRight className="inline-icon" aria-hidden="true" /></Link>
+            <Link to="/">На Обзор <IconArrowRight className="inline-icon" aria-hidden="true" /></Link>
           </div>
         )}
       </div>
@@ -313,8 +313,8 @@ export function RecommendationPage() {
           <div className="history-filters" aria-label="Фильтр истории">
             {[
               { key: "all", label: "Все" },
-              { key: "recommend", label: <><CircleCheck aria-hidden="true" /> Совет</> },
-              { key: "refuse", label: <><CircleX aria-hidden="true" /> Отказ</> },
+              { key: "recommend", label: <><IconCircleCheck aria-hidden="true" /> Совет</> },
+              { key: "refuse", label: <><IconCircleX aria-hidden="true" /> Отказ</> },
             ].map((option) => (
               <button
                 key={option.key}
@@ -346,12 +346,12 @@ export function RecommendationPage() {
                   className={`history-run__status history-run__status--${run.status}`}
                 >
                   {run.status === "completed"
-                    ? <CircleCheck aria-hidden="true" />
+                    ? <IconCircleCheck aria-hidden="true" />
                     : run.status === "refused"
-                      ? <CircleX aria-hidden="true" />
+                      ? <IconCircleX aria-hidden="true" />
                       : run.status === "failed"
-                        ? <CircleAlert aria-hidden="true" />
-                        : <LoaderCircle className="agent-node__spinner" aria-hidden="true" />}
+                        ? <IconAlertCircle aria-hidden="true" />
+                        : <IconLoader2 className="agent-node__spinner" aria-hidden="true" />}
                 </span>
               </div>
               <strong>
