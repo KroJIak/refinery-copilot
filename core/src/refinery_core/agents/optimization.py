@@ -3,8 +3,16 @@ from __future__ import annotations
 import math
 
 from refinery_core.agents.base import AgentStep, NumberRef, RunContext
-from refinery_core.agents.quality import T95_LIMIT, bump_tag, feature_matrix
+from refinery_core.agents.quality import bump_tag, feature_matrix
 from refinery_core.events import utcnow
+from refinery_core.optimize.constraints import (
+    DENSITY_MAX,
+    DENSITY_MIN,
+    SULFUR_MAX,
+    T95_MAX,
+    cetane_floor,
+    season_of,
+)
 
 T5_STEPS = (-5.0, -2.0, 0.0, 2.0, 5.0, 8.0)
 F26_STEPS = (-8.0, 0.0, 8.0)
@@ -28,6 +36,11 @@ class OptimizationAgent:
         t5 = float(df.iloc[0]["T5_lag0"])
         f26 = float(df.iloc[0]["F26_lag0"]) if pd_ok(df.iloc[0].get("F26_lag0")) else None
         p13 = float(df.iloc[0]["P13_lag0"]) if pd_ok(df.iloc[0].get("P13_lag0")) else None
+        cetane = _finite(ctx.steps["data"].output["slices"].get("cetane"))
+        density = _finite(ctx.steps["data"].output["slices"].get("d15"))
+        data_slices = ctx.steps["data"].output["slices"]
+        season = season_of(ctx.scenario.t_point, ctx.scenario.season)
+        cetane_limit = cetane_floor(season)
         loc_cols = ctx.registry.features_whatif
         loc0 = ctx.registry.loc_value(feature_matrix(df, loc_cols))
         freeze = ctx.steps["reliability"].output.get("severity_index", 0) >= 0.85
@@ -65,10 +78,18 @@ class OptimizationAgent:
             s10 = sulfur["p10"] + delta_s
             s50 = sulfur["p50"] + delta_s
             s90 = sulfur["p90"] + delta_s
-            if s50 > 10.0:
+            if s50 > SULFUR_MAX:
                 violations.append("sulfur_max")
-            if t95["p50"] > T95_LIMIT:
+            if t95["p50"] > T95_MAX:
                 violations.append("t95_max")
+            if cetane is not None and cetane < cetane_limit:
+                violations.append("cetane_min")
+            if density is not None and not DENSITY_MIN <= density <= DENSITY_MAX:
+                violations.append("density_range")
+            kerosene = _finite(data_slices.get("blend_share_kerosene"))
+            gasoil = _finite(data_slices.get("blend_share_gasoil"))
+            if kerosene is not None and gasoil is not None and kerosene + gasoil > 1.0:
+                violations.append("blend_shares")
             cost = ENERGY * max(0.0, sulfur["p50"] - s50)
             label = []
             if d_t5:
@@ -126,11 +147,15 @@ class OptimizationAgent:
         )
 
 
-def pd_ok(v) -> bool:
+def _finite(v) -> float | None:
     if v is None:
-        return False
+        return None
     try:
         x = float(v)
     except (TypeError, ValueError):
-        return False
-    return not math.isnan(x)
+        return None
+    return x if math.isfinite(x) else None
+
+
+def pd_ok(v) -> bool:
+    return _finite(v) is not None

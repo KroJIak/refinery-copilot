@@ -81,9 +81,11 @@ export function lttbDownsample(points: TagPoint[], target = 8000): TagPoint[] {
   return selected.sort((a, b) => a.ts.localeCompare(b.ts));
 }
 
-const time = (value: number) =>
-  new Date(value).toLocaleTimeString("ru-RU", {
+const time = (value: number | Date | string) =>
+  new Date(value).toLocaleString("ru-RU", {
     timeZone: "UTC",
+    day: "2-digit",
+    month: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -187,24 +189,48 @@ export function TimeSeriesChart({
         progressive: 2000,
       } as SeriesOption);
       if (item.kind === "telemetry") {
-        const breach = points.map((point) => {
+        const limit = thresholds.find(
+          (th) => th.kind === "spec_max" && typeof th.value === "number",
+        )?.value as number | undefined;
+        const over = (value: number | null | undefined) =>
+          value != null && limit != null && value > limit;
+        const rows: Array<[number, number | null]> = [];
+        points.forEach((point, index) => {
+          const previous = points[index - 1];
+          const next = points[index + 1];
+          const ts = Date.parse(point.ts);
           const value = point.value;
-          const exceeds =
-            value !== null &&
-            thresholds.some(
-              (th) =>
-                typeof th.value === "number" &&
-                (th.kind === "spec_max" ? value > th.value : value < th.value),
-            );
-          return [Date.parse(point.ts), exceeds ? value : null];
+          const cross = (neighbor: TagPoint | undefined) => {
+            if (
+              neighbor?.value == null ||
+              value == null ||
+              limit == null ||
+              over(neighbor.value) === over(value)
+            ) return null;
+            const neighborTs = Date.parse(neighbor.ts);
+            const ratio = (limit - value) / (neighbor.value - value);
+            return ts + (neighborTs - ts) * ratio as number;
+          };
+          if (!over(previous?.value)) {
+            const at = cross(previous);
+            if (at != null && limit != null) rows.push([at, limit]);
+          }
+          rows.push([ts, over(value) ? value : null]);
+          if (over(value) && !over(next?.value)) {
+            const at = cross(next);
+            if (at != null && limit != null) rows.push([at, limit]);
+            rows.push([ts, null]);
+          }
         });
         plotted.push({
           type: "line",
           name: "За нормой",
-          data: breach,
+          data: rows,
           showSymbol: false,
           connectNulls: false,
-          lineStyle: { color: "#ff655c", width: 2 },
+          z: 4,
+          lineStyle: { color: "#ff655c", width: 2.5 },
+          emphasis: { disabled: true },
           tooltip: { show: false },
         });
       }

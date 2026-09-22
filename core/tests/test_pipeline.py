@@ -37,11 +37,15 @@ def test_row_is_published_not_future(store):
 
 
 def test_demo_hours_are_distinct():
-    hours = {PRESETS[k]["t_point"] for k in ("normal", "quality_risk", "bad_data", "sour_crude")}
-    assert len(hours) == 4
+    hours = {
+        PRESETS[k]["t_point"]
+        for k in ("normal", "quality_risk", "bad_data", "sour_crude", "stale_lims")
+    }
+    assert len(hours) == 5
     assert PRESETS["sour_crude"]["overrides"] == {}
     assert "feed_sulfur_delta" not in PRESETS["sour_crude"]
     assert PRESETS["bad_data"]["fault"].lims_age_hours is None
+    assert PRESETS["stale_lims"]["fault"].lims_age_hours is None
 
 
 def test_bad_data_refuses(store, registry, settings):
@@ -120,5 +124,7 @@ def test_sulfur_check_uses_expected_value(store, registry, settings):
     opt = result.ctx.steps["optimization"].output
     assert opt["n_feasible"] >= 1
     assert len(opt["candidates"]) > 4
-    density = next(c for c in result.recommendation["checks"] if c["constraint_id"] == "density_range")
+    density = next(
+        c for c in result.recommendation["checks"] if c["constraint_id"] == "density_range"
+    )
     assert density["passed"] is None or density["value"] is not None

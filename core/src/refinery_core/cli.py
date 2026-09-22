@@ -52,7 +52,7 @@ def _add_common(p: argparse.ArgumentParser) -> None:
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="refinery-core")
     sub = p.add_subparsers(dest="cmd", required=True)
-    demo = sub.add_parser("demo", help="четыре демо-сценария или один --scenario")
+    demo = sub.add_parser("demo", help="пять демо-сценариев или один --scenario")
     demo.add_argument("--scenario", choices=[*DEMO_KINDS, "stale_lims", "all"], default="all")
     _add_common(demo)
     run = sub.add_parser("run", help="один прогон на свой час, без ожидания исхода")

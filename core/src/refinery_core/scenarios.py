@@ -12,6 +12,7 @@ DEMO_ORDER: tuple[ScenarioKind, ...] = (
     "quality_risk",
     "bad_data",
     "sour_crude",
+    "stale_lims",
 )
 
 

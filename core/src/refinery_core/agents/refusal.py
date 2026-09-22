@@ -23,6 +23,18 @@ def collect(ctx: RunContext) -> tuple[list[RefusalReason], list[str]]:
     opt = ctx.steps.get("optimization")
     quality = ctx.steps.get("quality")
     no_variant = opt is not None and opt.output.get("n_feasible") == 0
+    if opt is not None:
+        failed_checks = {
+            reason
+            for candidate in opt.output.get("candidates", [])
+            for reason in candidate.get("violations", [])
+            if reason in {"cetane_min", "density_range"}
+        }
+        if failed_checks and no_variant:
+            details.append(
+                "допустимые варианты нарушают требования качества: "
+                + ", ".join(sorted(failed_checks))
+            )
     if quality and quality.output.get("wide_interval") and (no_variant or opt is None):
         s = quality.output["assessments"][0]
         reasons.append("wide_interval")

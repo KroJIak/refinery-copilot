@@ -38,6 +38,8 @@ def freshness_status_label(status: str) -> str:
     if status in FRESHNESS_STATUS_LABELS:
         return FRESHNESS_STATUS_LABELS[status]  # type: ignore[index]
     return status
+
+
 RunStatus = Literal["started", "running", "completed", "refused", "failed"]
 ScenarioKind = Literal["normal", "quality_risk", "bad_data", "sour_crude", "stale_lims"]
 QualityTarget = Literal["sulfur", "t95", "d15", "cetane"]
@@ -49,6 +51,7 @@ DEMO_KINDS: tuple[ScenarioKind, ...] = (
     "quality_risk",
     "bad_data",
     "sour_crude",
+    "stale_lims",
 )
 
 EXPECTED_OUTCOME: dict[ScenarioKind, Decision] = {

@@ -10,9 +10,7 @@ const navigation = [
   { label: 'Обзор', to: '/' },
   { label: 'Сценарии', to: '/recommendation' },
   { label: 'Что если', to: '/whatif' },
-  { label: 'Мнемосхема', to: '/mnemonic' },
   { label: 'Модели', to: '/models' },
-  { label: 'Отчёты', to: '/data' },
 ] as const;
 
 function formatAge(ageHours: number | null): string {

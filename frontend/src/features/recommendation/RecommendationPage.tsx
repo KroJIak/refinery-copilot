@@ -90,11 +90,14 @@ export function RecommendationPage() {
     alternative?: AlternativeItem,
   ) => {
     const actions = alternative?.actions ?? recommendation.actions ?? [];
-    store.setWhatifDraft(
-      Object.fromEntries(
-        actions.map((action) => [action.tag, action.recommendedValue]),
-      ),
-    );
+    const draft: Record<string, number> = {};
+    store.controlledVariables.forEach((variable) => {
+      if (variable.key.startsWith("blend_")) draft[variable.key] = 0;
+    });
+    actions.forEach((action) => {
+      if (action.recommendedValue != null) draft[action.tag] = action.recommendedValue;
+    });
+    store.setWhatifDraft(draft);
     navigate("/whatif");
   };
   const download = async (format: "md" | "json") => {

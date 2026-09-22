@@ -13,6 +13,8 @@ export function sulfurSeries(
   const points = telemetry
     .filter((point) => point.tagCode === tag)
     .sort((a, b) => a.ts.localeCompare(b.ts));
+  const lab = sulfur.filter((point) => point.source === "lims");
+  const labTag = lab.some((point) => point.tagCode === "sulfur") ? "sulfur" : lab[0]?.tagCode;
   const result: SeriesInput[] = [
     {
       tagCode: tag ?? "Q21",
@@ -23,7 +25,7 @@ export function sulfurSeries(
     {
       tagCode: "lims_sulfur",
       unit: "мг/кг",
-      points: sulfur.filter((point) => point.source === "lims"),
+      points: lab.filter((point) => point.tagCode === labTag),
       kind: "lims_fact",
     },
   ];

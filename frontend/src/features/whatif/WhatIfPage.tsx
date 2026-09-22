@@ -108,11 +108,15 @@ export function WhatIfPage() {
       <section className="whatif-card">
         <div className="whatif-card-title"><h2>Управляемые переменные</h2><div className="whatif-presets" aria-label="Сценарии «Что если»">{store.scenarios.filter((item) => ['normal', 'quality_risk', 'sour_crude'].includes(item.kind)).map((item) => <button key={item.kind} className={`whatif-preset ${!custom && item.kind === store.kind ? 'active' : ''}`} aria-pressed={!custom && item.kind === store.kind} title={item.description} disabled={store.loading} onClick={() => void applyPreset(item.kind)}>{item.label}</button>)}</div></div>
         {!variables.length && <p className="model-note">Загрузка управляемых переменных…</p>}
-        {(['hdu', 'avt', 'blend'] as const).map((group) => <div className="whatif-group" key={group}>
-          <div className="whatif-group-title">{group === 'hdu' ? 'Гидроочистка' : group === 'avt' ? 'АВТ' : 'Блендинг'}</div>
-          {variables.filter((variable) => variable.group === group).map((variable) => <Control key={variable.key} variable={variable} value={overrides?.[variable.key]} invalid={violations.some((violation) => violation.includes(variable.key))} onChange={change} />)}
-          {group === 'blend' && <p className="model-note">Очищенный дизель: {remaining === null ? 'нет данных' : `${format(remaining * 100)} %`} · остаток до 100 %</p>}
-        </div>)}
+        {(['hdu', 'blend'] as const).map((group) => {
+          const items = variables.filter((variable) => variable.group === group);
+          if (!items.length) return null;
+          return <div className="whatif-group" key={group}>
+            <div className="whatif-group-title">{group === 'hdu' ? 'Гидроочистка' : 'Смешение'}</div>
+            {items.map((variable) => <Control key={variable.key} variable={variable} value={overrides?.[variable.key]} invalid={violations.some((violation) => violation.includes(variable.key))} onChange={change} />)}
+            {group === 'blend' && <p className="model-note">Очищенный дизель: {remaining === null ? 'нет данных' : `${format(remaining * 100)} %`} · остаток до 100 %</p>}
+          </div>;
+        })}
         <p className="model-note">Рабочий диапазон основан на истории. Это не паспортные пределы оборудования.</p>
       </section>
       <section className="whatif-card whatif-result-card">
