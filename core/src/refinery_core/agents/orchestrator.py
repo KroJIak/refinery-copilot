@@ -13,7 +13,12 @@ from refinery_core.agents.refusal import collect, explanation
 from refinery_core.agents.reliability import ReliabilityAgent
 from refinery_core.config import Settings
 from refinery_core.events import CoreEvent, EventSink, NullSink, utcnow
-from refinery_core.optimize.constraints import cetane_floor, season_of
+from refinery_core.optimize.constraints import (
+    DENSITY_MAX,
+    DENSITY_MIN,
+    cetane_floor,
+    season_of,
+)
 from refinery_core.registry import ModelRegistry
 from refinery_core.scenarios import Scenario
 from refinery_core.store import SliceStore
@@ -88,26 +93,78 @@ class Orchestrator:
 
         opt = ctx.steps["optimization"].output
         feasible = [c for c in opt["candidates"] if c["feasible"]]
-        hold = next((c for c in feasible if c["delta_T5"] == 0 and c["sulfur_p90"] < 10.0), None)
+        hold = next(
+            (
+                c
+                for c in feasible
+                if c["delta_T5"] == 0
+                and not c.get("delta_F26")
+                and not c.get("delta_P13")
+                and c["sulfur_p90"] < 10.0
+            ),
+            None,
+        )
         if hold is not None:
             chosen = hold
         else:
             chosen = max(
-                feasible, key=lambda c: (c["margin"], -c["cost_index"], -abs(c["delta_T5"]))
+                feasible,
+                key=lambda c: (
+                    c["margin"],
+                    -c["cost_index"],
+                    -abs(c["delta_T5"]),
+                    -abs(c.get("delta_F26") or 0),
+                ),
             )
         t5 = opt["T5"]
         sulfur0 = next(
             a for a in ctx.steps["quality"].output["assessments"] if a["target"] == "sulfur"
         )
-        actions = [
-            {
-                "tag": "24-2000.T5",
-                "unit": "°C",
-                "current_value": t5,
-                "recommended_value": chosen["T5"],
-                "delta_pct": None if t5 == 0 else 100.0 * chosen["delta_T5"] / t5,
-            }
-        ]
+        actions = []
+        if chosen["delta_T5"] or (chosen["T5"] == t5 and not chosen.get("delta_F26") and not chosen.get("delta_P13")):
+            actions.append(
+                {
+                    "tag": "24-2000.T5",
+                    "label": "температура реактора",
+                    "unit": "°C",
+                    "current_value": t5,
+                    "recommended_value": chosen["T5"],
+                    "delta_pct": None if t5 == 0 else 100.0 * chosen["delta_T5"] / t5,
+                }
+            )
+        if chosen.get("delta_F26"):
+            actions.append(
+                {
+                    "tag": "24-2000.F26",
+                    "label": "расход сырья",
+                    "unit": None,
+                    "current_value": opt.get("F26"),
+                    "recommended_value": chosen.get("F26"),
+                    "delta_pct": None,
+                }
+            )
+        if chosen.get("delta_P13"):
+            actions.append(
+                {
+                    "tag": "24-2000.P13",
+                    "label": "давление",
+                    "unit": None,
+                    "current_value": opt.get("P13"),
+                    "recommended_value": chosen.get("P13"),
+                    "delta_pct": None,
+                }
+            )
+        if not actions:
+            actions.append(
+                {
+                    "tag": "24-2000.T5",
+                    "label": "температура реактора",
+                    "unit": "°C",
+                    "current_value": t5,
+                    "recommended_value": chosen["T5"],
+                    "delta_pct": None,
+                }
+            )
         effects = [
             {
                 "target": "sulfur",
@@ -119,26 +176,28 @@ class Orchestrator:
                 "margin_to_spec": chosen["margin"],
             }
         ]
+        sulfur_ok = chosen["sulfur_p90"] <= SULFUR_LIMIT
+        t95_ok = chosen["t95_p90"] <= T95_LIMIT
         checks = [
             {
                 "constraint_id": "sulfur_max",
                 "description": "сера ≤ 10 мг/кг",
                 "limit": SULFUR_LIMIT,
                 "unit": "мг/кг",
-                "value": chosen["sulfur_p50"],
-                "passed": chosen["sulfur_p50"] <= SULFUR_LIMIT,
+                "value": chosen["sulfur_p90"],
+                "passed": sulfur_ok,
             },
             {
                 "constraint_id": "t95_max",
                 "description": "T95 ≤ 360 °C",
                 "limit": T95_LIMIT,
                 "unit": "°C",
-                "value": chosen["t95_p50"],
-                "passed": chosen["t95_p50"] <= T95_LIMIT,
+                "value": chosen["t95_p90"],
+                "passed": t95_ok,
             },
             {
                 "constraint_id": "range_t5",
-                "description": "T5 в рабочем диапазоне",
+                "description": "температура реактора в рабочем диапазоне",
                 "limit": "348–388",
                 "unit": "°C",
                 "value": chosen["T5"],
@@ -148,31 +207,75 @@ class Orchestrator:
         season = season_of(ctx.scenario.t_point, ctx.scenario.season)
         floor = cetane_floor(season)
         cetane_id = "cetane_min_winter" if season == "winter" else "cetane_min_summer"
-        checks.append(
-            {
-                "constraint_id": cetane_id,
-                "description": f"ЦЧ ≥ {floor:.0f} ({'зима' if season == 'winter' else 'лето'})",
-                "limit": floor,
-                "unit": None,
-                "value": None,
-                "passed": True,
-                "note": "цетановое не моделируется, 42 точки лаборатории",
-            }
-        )
+        cetane_val = slices.get("cetane")
+        if cetane_val is None:
+            checks.append(
+                {
+                    "constraint_id": cetane_id,
+                    "description": f"цетановое ≥ {floor:.0f} ({'зима' if season == 'winter' else 'лето'})",
+                    "limit": floor,
+                    "unit": None,
+                    "value": None,
+                    "passed": None,
+                    "note": "в этой пробе цетанового нет",
+                }
+            )
+        else:
+            checks.append(
+                {
+                    "constraint_id": cetane_id,
+                    "description": f"цетановое ≥ {floor:.0f} ({'зима' if season == 'winter' else 'лето'})",
+                    "limit": floor,
+                    "unit": None,
+                    "value": cetane_val,
+                    "passed": cetane_val >= floor,
+                    "note": "последняя лабораторная проба, не прогноз",
+                }
+            )
+        d15 = slices.get("d15")
+        if d15 is None:
+            checks.append(
+                {
+                    "constraint_id": "density_range",
+                    "description": f"плотность {DENSITY_MIN:.0f}–{DENSITY_MAX:.0f} кг/м³",
+                    "limit": DENSITY_MAX,
+                    "unit": "кг/м³",
+                    "value": None,
+                    "passed": None,
+                    "note": "в этой пробе плотности нет",
+                }
+            )
+        else:
+            checks.append(
+                {
+                    "constraint_id": "density_range",
+                    "description": f"плотность {DENSITY_MIN:.0f}–{DENSITY_MAX:.0f} кг/м³",
+                    "limit": DENSITY_MAX,
+                    "unit": "кг/м³",
+                    "value": d15,
+                    "passed": DENSITY_MIN <= d15 <= DENSITY_MAX,
+                    "note": "последняя лабораторная проба, не прогноз",
+                }
+            )
         conf = {
             "p10": 0.62 if chosen["margin"] > 0.3 else 0.45,
             "p90": 0.88 if chosen["margin"] > 0.3 else 0.72,
         }
-        if chosen["delta_T5"] == 0:
+        if (
+            chosen["delta_T5"] == 0
+            and not chosen.get("delta_F26")
+            and not chosen.get("delta_P13")
+        ):
             expl = (
-                f"Режим оставляем. T5 {t5:.1f} °C, сера P50 {sulfur0['p50']:.2f} мг/кг, "
-                f"запас до 10 мг/кг {chosen['margin']:.2f}."
+                f"Режим оставляем. Температура реактора {t5:.1f} °C, "
+                f"ожидаемая сера {sulfur0['p50']:.2f} мг/кг, "
+                f"верхняя граница вилки {chosen['sulfur_p90']:.2f}."
             )
         else:
+            bits = [chosen.get("label") or "крутка режима"]
             expl = (
-                f"Поднять T5 с {t5:.1f} до {chosen['T5']:.1f} °C. "
-                f"Сера P50 {sulfur0['p50']:.2f} → {chosen['sulfur_p50']:.2f} мг/кг "
-                f"(сдвиг L2-локализатора, не квантильный градиент)."
+                f"{bits[0]}. Ожидаемая сера {sulfur0['p50']:.2f} → {chosen['sulfur_p50']:.2f} мг/кг. "
+                f"Верхняя граница вилки {chosen['sulfur_p90']:.2f}, норма 10."
             )
         alts = []
         for i, c in enumerate(sorted(feasible, key=lambda x: -x["margin"])[:4]):
@@ -182,6 +285,7 @@ class Orchestrator:
                     "actions": [
                         {
                             "tag": "24-2000.T5",
+                            "label": "температура реактора",
                             "unit": "°C",
                             "current_value": t5,
                             "recommended_value": c["T5"],

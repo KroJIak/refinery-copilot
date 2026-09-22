@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-import json
+import math
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 
 from refinery_core.agents.orchestrator import run_pipeline
 from refinery_core.config import Settings as CoreSettings
-from refinery_core.events import CoreEvent, EventSink
+from refinery_core.events import CoreEvent
 from refinery_core.registry import EnvironmentError, ModelRegistry
 from refinery_core.report.run_report import persist
-from refinery_core.scenarios import PRESETS, LABELS, resolve_scenario
+from refinery_core.scenarios import LABELS, PRESETS, resolve_scenario
 from refinery_core.store import SliceStore
 from refinery_core.types import ScenarioKind
 
@@ -99,7 +99,7 @@ def state_payload(app: AppState, t_point: datetime) -> dict[str, Any]:
             {
                 "tagCode": code,
                 "ts": _iso(sample),
-                "value": None if val != val else float(val),
+                "value": None if val is None or (isinstance(val, float) and math.isnan(val)) else float(val),
                 "qualityFlag": "ok",
                 "source": "telemetry",
                 "unit": unit,
@@ -119,7 +119,13 @@ def state_payload(app: AppState, t_point: datetime) -> dict[str, Any]:
             "staleAfterH": 52,
         }
     ]
-    return {"tPoint": _iso(t_point), "tags": tags, "freshness": freshness}
+    window = app.store.window(t_point)
+    return {
+        "tPoint": _iso(t_point),
+        "tags": tags,
+        "freshness": freshness,
+        "telemetryWindow": window,
+    }
 
 
 def models_payload(app: AppState) -> list[dict[str, Any]]:

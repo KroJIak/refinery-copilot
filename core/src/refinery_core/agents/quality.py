@@ -24,16 +24,25 @@ def feature_matrix(df: pd.DataFrame, cols: list[str]) -> np.ndarray:
     return df[use].to_numpy(dtype=np.float64)
 
 
-def bump_t5(df: pd.DataFrame, cols: list[str], delta: float) -> pd.DataFrame:
+def bump_tag(df: pd.DataFrame, prefix: str, cols: list[str], delta: float) -> pd.DataFrame:
     out = df.copy()
     for c in cols:
-        if c.startswith("T5_") and "std" not in c and c in out.columns:
+        if c.startswith(prefix + "_") and "std" not in c and c in out.columns:
             out[c] = out[c] + delta
-    if "T5_mean_30" in out.columns and "T5_mean_180" in out.columns:
-        out["T5_recent_minus_slow"] = out["T5_mean_30"] - out["T5_mean_180"]
-    if "T5_mean_60" in out.columns and "inv_F26_60" in out.columns:
+    if prefix == "T5":
+        if "T5_mean_30" in out.columns and "T5_mean_180" in out.columns:
+            out["T5_recent_minus_slow"] = out["T5_mean_30"] - out["T5_mean_180"]
+        if "T5_mean_60" in out.columns and "inv_F26_60" in out.columns:
+            out["T5_x_invF"] = out["T5_mean_60"] * out["inv_F26_60"]
+    if prefix == "F26" and "T5_mean_60" in out.columns and "inv_F26_60" in out.columns:
+        inv = 1.0 / out["F26_mean_60"].replace(0, pd.NA)
+        out["inv_F26_60"] = inv
         out["T5_x_invF"] = out["T5_mean_60"] * out["inv_F26_60"]
     return out
+
+
+def bump_t5(df: pd.DataFrame, cols: list[str], delta: float) -> pd.DataFrame:
+    return bump_tag(df, "T5", cols, delta)
 
 
 class QualityAgent:
@@ -80,7 +89,7 @@ class QualityAgent:
         ]
         ctx.feature_frame = df
         notes = [
-            f"сера P50 {p50:.2f} (P10 {p10:.2f}–P90 {p90:.2f})",
+            f"сера {p50:.2f} (вилка {p10:.2f}–{p90:.2f})",
             f"T95 {t95_p50:.1f} ± {t95_hw:.0f} °C",
         ]
         refs = [

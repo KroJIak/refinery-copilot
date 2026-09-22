@@ -71,8 +71,11 @@ class DataAgent:
             "prev_lims_sulfur": _num(ctx.row.get("prev_lims_sulfur")),
             "y_sulfur": _num(row.get("y_sulfur")),
             "t95": _num(row.get("t95_same_sample")),
+            "cetane": _num(row.get("cetane_same_sample")) or _num(row.get("cetane_last")),
+            "d15": _num(row.get("d15_same_sample")) or _num(row.get("d15_last")),
             "Q21": q21,
         }
+        window = ctx.store.window(ctx.scenario.t_point)
         freshness = [
             {
                 "point_id": "hdu_product_sulfur",
@@ -96,13 +99,23 @@ class DataAgent:
             NumberRef("freshness[0].age_hours", age, "ч", "возраст ЛИМС"),
             NumberRef("slices.T5", slices["T5"], "°C", "T5"),
             NumberRef("slices.F26", slices["F26"], None, "F26"),
+            NumberRef("slices.cetane", slices["cetane"], None, "цетановое"),
+            NumberRef("slices.d15", slices["d15"], "кг/м³", "плотность"),
         ]
+        extra = []
+        if slices["cetane"] is not None:
+            extra.append(f"цетановое {slices['cetane']:.1f}")
+        if slices["d15"] is not None:
+            extra.append(f"плотность {slices['d15']:.1f}")
+        if extra:
+            notes.append(", ".join(extra))
         output = {
             "slices": slices,
             "freshness": freshness,
             "anomalies": {"flags": flags},
             "data_sufficiency": sufficiency,
             "feature_row_ts": sample_ts.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "telemetry_window": window,
         }
         finished = utcnow()
         step = AgentStep(

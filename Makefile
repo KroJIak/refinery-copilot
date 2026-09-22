@@ -32,6 +32,7 @@ lint: .venv ## ruff
 	uv run ruff check core/src core/tests && uv run ruff format --check core/src core/tests
 
 up: ## docker compose
+	mkdir -p artifacts/runs artifacts/timeline
 	docker compose up -d --build
 
 down: ## остановить контейнеры

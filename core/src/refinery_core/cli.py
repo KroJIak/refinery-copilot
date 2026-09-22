@@ -187,6 +187,9 @@ def cmd_train() -> int:
     train_sulfur()
     train_t95()
     return 0
+
+
+def cmd_run(args: argparse.Namespace) -> int:
     console = Console(highlight=False, soft_wrap=True)
     loaded = _load(console)
     if isinstance(loaded, int):

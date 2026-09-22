@@ -89,14 +89,18 @@ def parse_lims_pairs(path: Path, time_col: int, value_col: int) -> pd.Series:
     return s
 
 
-def load_labels() -> tuple[pd.Series, pd.Series, pd.Series]:
+def load_labels() -> tuple[pd.Series, pd.Series, pd.Series, pd.Series, pd.Series]:
     path = next(RAW.glob("*ЛИМС*"))
     sulfur = parse_lims_pairs(path, 94, 95)
     t95 = parse_lims_pairs(path, 92, 93)
     feed_s = parse_lims_pairs(path, 80, 81)
+    d15 = parse_lims_pairs(path, 84, 85)
+    cetane = parse_lims_pairs(path, 102, 103)
     sulfur = sulfur[(sulfur > 0) & (sulfur < 50)]
     t95 = t95[(t95 > 250) & (t95 < 420)]
-    return sulfur, t95, feed_s
+    d15 = d15[(d15 > 780) & (d15 < 900)]
+    cetane = cetane[(cetane > 40) & (cetane < 70)]
+    return sulfur, t95, feed_s, d15, cetane
 
 
 def window_stats(series: pd.Series, t: pd.Timestamp, minutes: int) -> tuple[float, float]:
@@ -114,7 +118,7 @@ def lagged(series: pd.Series, t: pd.Timestamp, steps: list[int]) -> dict[str, fl
         ts = t - pd.Timedelta(minutes=10 * k)
         try:
             out[f"{name}_lag{k}"] = float(series.asof(ts))
-        except Exception:
+        except (TypeError, ValueError, KeyError):
             out[f"{name}_lag{k}"] = np.nan
     return out
 
@@ -139,7 +143,7 @@ def build_rows() -> pd.DataFrame:
     tel = load_telemetry()
     avt = load_avt_subset()
     tel = tel.join(avt, how="left")
-    sulfur, t95, feed_s = load_labels()
+    sulfur, t95, feed_s, d15, cetane = load_labels()
     tags = {
         "T5": tel["T5"],
         "T11": tel["T11"],
@@ -171,7 +175,7 @@ def build_rows() -> pd.DataFrame:
         rec: dict = {
             "sample_ts": t,
             "y_sulfur": float(y),
-            "y_t95": float(t95.asof(t)) if t in t95.index or True else np.nan,
+            "y_t95": float(t95.asof(t)) if pd.notna(t95.asof(t)) else np.nan,
             "month": int(t.month),
             "month_sin": np.sin(2 * np.pi * t.month / 12),
             "month_cos": np.cos(2 * np.pi * t.month / 12),
@@ -187,9 +191,12 @@ def build_rows() -> pd.DataFrame:
             rec["lims_age_h"] = np.nan
             rec["prev_lims_sulfur"] = np.nan
         rec["feed_sulfur"] = asof_available(feed_s, t, 4.0)
-        t95_prev = t95[t95.index < t]
         rec["y_t95"] = float(t95.asof(t)) if pd.notna(t95.asof(t)) else np.nan
         rec["t95_same_sample"] = float(t95.loc[t]) if t in t95.index else np.nan
+        rec["d15_last"] = asof_available(d15, t, 4.0)
+        rec["cetane_last"] = asof_available(cetane, t, 4.0)
+        rec["d15_same_sample"] = float(d15.loc[t]) if t in d15.index else np.nan
+        rec["cetane_same_sample"] = float(cetane.loc[t]) if t in cetane.index else np.nan
 
         for name, series in tags.items():
             m30, s30 = window_stats(series, t, 30)

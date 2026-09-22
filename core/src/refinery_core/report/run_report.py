@@ -164,24 +164,33 @@ def render_markdown(report: dict[str, Any]) -> str:
             lines.append(f"  {d}")
     else:
         for a in rec.get("actions") or []:
+            name = a.get("label") or a["tag"]
             lines.append(
-                f"- Действие: {a['tag']} {a['current_value']:.2f} → {a['recommended_value']:.2f} {a.get('unit') or ''}"
+                f"- Действие: {name} {a['current_value']:.2f} → {a['recommended_value']:.2f} {a.get('unit') or ''}"
             )
         for e in rec.get("effects") or []:
             lines.append(
                 f"- Эффект {e['target']}: {e['baseline_p50']:.2f} → {e['action_p50']:.2f} {e.get('unit') or ''}"
             )
+            if e.get("p90") is not None:
+                lines.append(f"- Верхняя граница вилки серы: {e['p90']:.2f}")
         for c in rec.get("checks") or []:
-            mark = "да" if c["passed"] else "нет"
-            lines.append(f"- Проверка {c['description']}: {mark}")
+            if c.get("passed") is True:
+                mark = "да"
+            elif c.get("passed") is False:
+                mark = "нет"
+            else:
+                mark = "нет данных"
+            extra = f" ({c['note']})" if c.get("note") else ""
+            lines.append(f"- Проверка {c['description']}: {mark}{extra}")
         lines.append(rec.get("explanation", ""))
     lines += [
         "",
         "## Допущения",
-        "- Срез берётся из quality-датасета (последняя опубликованная проба ЛИМС, +4 ч), не из 10-минутной телеметрии.",
-        "- What-if по сере сдвигает квантили через L2-локализатор T5, квантильный градиент запрещён.",
+        "- Прогноз считается на лабораторной пробе. Рядом в отчёте данных есть окно 10-минутных датчиков за последние часы.",
+        "- Сдвиг серы при крутке температуры считается отдельной моделью процесса, без анализатора серы.",
         "- T95: последняя лаборатория плюс сдвиг месяца, полоса из калибровки.",
-        "- ЦЧ не моделируется (мало точек).",
-        "- Рабочий диапазон T5 330–385 °C — модельное допущение p2/p98.",
+        "- Цетановое и плотность, если есть, берутся из последней опубликованной пробы, не из модели.",
+        "- Рабочий диапазон температуры реактора 348–388 °C — модельное допущение по истории.",
     ]
     return "\n".join(lines) + "\n"

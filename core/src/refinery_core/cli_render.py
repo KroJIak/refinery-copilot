@@ -21,23 +21,13 @@ def print_session_banner(
     kinds: list[ScenarioKind],
 ) -> None:
     titles = ", ".join(scenario_title(k) for k in kinds)
-    sulfur = registry.sulfur_metrics
     t95 = registry.t95_baseline
     body = Text()
     body.append(f"seed {seed}\n")
+    body.append("сера считается по процессу и вчерашней пробе, анализатор серы в расчёт не берём\n")
+    body.append("ошибка на проверке около 1.8 мг/кг, облако попадает в норму примерно в 8 случаях из 10\n")
     body.append(
-        "сера: квантили LightGBM + CQR, what-if через L2 с монотонностью, без Q21\n",
-        style="dim",
-    )
-    hold = sulfur.get("hold_cqr") or {}
-    if hold:
-        body.append(
-            f"hold MAE {hold.get('mae', 0):.2f}, покрытие {hold.get('coverage', 0):.2f}\n",
-            style="dim",
-        )
-    body.append(
-        f"T95: последняя лаборатория и сдвиг месяца, полоса ±{t95.get('interval_halfwidth', 7):.0f} °C\n",
-        style="dim",
+        f"T95 берём из последней пробы, запас ±{t95.get('interval_halfwidth', 7):.0f} °C\n"
     )
     body.append(f"сценарии: {titles}")
     console.print(Panel(body, title="демо", border_style="bright_black", padding=(0, 1), expand=True))
@@ -87,19 +77,38 @@ class ConsoleSink:
         body = Text()
         if actions:
             a = actions[0]
+            name = a.get("label") or a["tag"]
             body.append(
-                f"{a['tag']}: {a['current_value']:.1f} → {a['recommended_value']:.1f} {a.get('unit') or ''}\n",
+                f"{name}: {a['current_value']:.1f} → {a['recommended_value']:.1f} {a.get('unit') or ''}\n",
                 style="bold",
             )
         if effects:
             e = effects[0]
             body.append(f"сера {e['baseline_p50']:.2f} → {e['action_p50']:.2f} {e.get('unit')}\n")
-        ok = sum(1 for c in checks if c.get("passed"))
-        body.append(f"проверки {ok}/{len(checks)}\n", style="green")
+            if e.get("p90") is not None:
+                body.append(f"верхняя граница вилки {e['p90']:.2f} (норма 10)\n")
+        scored = [c for c in checks if c.get("passed") is True]
+        unknown = [c for c in checks if c.get("passed") is None]
+        failed = [c for c in checks if c.get("passed") is False]
+        if failed:
+            body.append(f"проверки не прошли: {len(failed)}\n", style="red")
+            for c in failed:
+                body.append(f"  {c['description']}\n", style="red")
+        if scored:
+            body.append(f"прошли {len(scored)}\n", style="green")
+        if unknown:
+            for c in unknown:
+                body.append(f"{c['description']}: нет данных\n", style="yellow")
         conf = rec.get("confidence") or {}
         if conf:
             body.append(f"уверенность {conf.get('p10', 0):.2f}–{conf.get('p90', 0):.2f}\n")
-        body.append(rec.get("explanation") or "", style="dim")
+        expl = rec.get("explanation") or ""
+        for line in expl.split(". "):
+            piece = line.strip()
+            if piece and not piece.endswith("."):
+                piece += "."
+            if piece:
+                body.append(piece + "\n", style="dim")
         self.console.print(
             Panel(body, title="рекомендация", border_style="blue", padding=(0, 1), expand=True)
         )

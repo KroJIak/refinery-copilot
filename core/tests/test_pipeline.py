@@ -85,6 +85,13 @@ def test_determinism_numbers(store, registry, settings):
     )
 
 
+def test_telemetry_window_present(store):
+    t = datetime(2024, 8, 17, 14, 0, tzinfo=UTC)
+    window = store.window(t)
+    assert window
+    assert "T5" in window[0]
+
+
 def test_season_changes_cetane_check(store, registry, settings):
     summer = run_pipeline(
         resolve_scenario("normal", season="summer"), store, registry, settings=settings
@@ -97,3 +104,20 @@ def test_season_changes_cetane_check(store, registry, settings):
     assert "cetane_min_summer" in s_ids
     assert "cetane_min_winter" in w_ids
     assert s_ids != w_ids
+    s_cetane = next(c for c in summer.recommendation["checks"] if "cetane" in c["constraint_id"])
+    assert s_cetane["passed"] is None or isinstance(s_cetane["value"], float)
+
+
+def test_sulfur_check_uses_upper_bound(store, registry, settings):
+    result = run_pipeline(resolve_scenario("quality_risk"), store, registry, settings=settings)
+    sulfur = next(c for c in result.recommendation["checks"] if c["constraint_id"] == "sulfur_max")
+    effect = result.recommendation["effects"][0]
+    assert sulfur["value"] == effect["p90"]
+    assert sulfur["passed"] == (effect["p90"] <= 10)
+    labels = {a["label"] for a in result.recommendation["actions"]}
+    assert labels
+    opt = result.ctx.steps["optimization"].output
+    assert opt["n_feasible"] >= 1
+    assert len(opt["candidates"]) > 4
+    density = next(c for c in result.recommendation["checks"] if c["constraint_id"] == "density_range")
+    assert density["passed"] is None or density["value"] is not None
