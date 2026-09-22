@@ -13,7 +13,7 @@ export default defineConfig({
     viewport: { width: 1536, height: 1024 },
   },
   webServer: {
-    command: 'npm run dev:mock -- --port 5175',
+    command: 'npm run dev -- --port 5175',
     url: 'http://127.0.0.1:5175',
     reuseExistingServer: !process.env.CI,
     timeout: 30_000,

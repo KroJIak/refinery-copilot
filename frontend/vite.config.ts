@@ -13,7 +13,6 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react(), tailwindcss()],
-    define: mode === 'mock' ? { 'import.meta.env.VITE_USE_MOCKS': JSON.stringify('true') } : {},
     resolve: {
       alias: { '@': path.resolve(__dirname, 'src') },
     },
