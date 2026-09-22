@@ -123,6 +123,19 @@ def list_runs(request: Request) -> list:
     return rows
 
 
+def _camel(value):
+    if isinstance(value, list):
+        return [_camel(item) for item in value]
+    if isinstance(value, dict):
+        out = {}
+        for key, item in value.items():
+            parts = str(key).split("_")
+            name = parts[0] + "".join(part[:1].upper() + part[1:] for part in parts[1:])
+            out[name] = _camel(item)
+        return out
+    return value
+
+
 @router.get("/runs/{run_id}")
 def get_run(run_id: str, request: Request) -> dict:
     item = _app(request).runs.get(run_id)
@@ -131,7 +144,7 @@ def get_run(run_id: str, request: Request) -> dict:
     path = _app(request).settings.root / item["artifacts"]["report_json"]
     import json
 
-    return json.loads(path.read_text(encoding="utf-8"))
+    return _camel(json.loads(path.read_text(encoding="utf-8")))
 
 
 @router.get("/runs/{run_id}/report.{fmt}")

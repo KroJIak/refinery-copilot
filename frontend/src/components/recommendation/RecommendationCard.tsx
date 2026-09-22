@@ -33,8 +33,8 @@ export const targetLabel: Record<string, string> = {
   F19: "Расход",
   "24-2000.F19": "Расход",
 };
-export const shortTag = (tag: string) =>
-  tag.startsWith("24-2000.") ? tag.slice(8) : tag;
+export const shortTag = (tag: string, label?: string) =>
+  label || (tag.startsWith("24-2000.") ? tag.slice(8) : tag);
 export const number = (value: number | null | undefined, precision = 1) =>
   value == null
     ? "—"
@@ -113,7 +113,7 @@ export function RecommendationCard({
           ) : (
             <>
               {action
-                ? `${shortTag(action.tag)}: ${number(action.currentValue)} → ${valueWithUnit(action.recommendedValue, action.unit)}`
+                ? `${shortTag(action.tag, action.label)}: ${number(action.currentValue)} → ${valueWithUnit(action.recommendedValue, action.unit)}`
                 : "Рекомендация готова"}
               {sulfur && (
                 <>

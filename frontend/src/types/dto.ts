@@ -63,6 +63,7 @@ export interface RiskItem {
 }
 export interface ActionItem {
   tag: string;
+  label?: string;
   unit: string | null;
   currentValue: number;
   recommendedValue: number;

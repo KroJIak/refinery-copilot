@@ -5,7 +5,7 @@ import { Tooltip } from '@/components/ui/Tooltip';
 import type { ModelArtifact } from '@/types';
 import './ModelsPage.css';
 
-const targetNames: Record<string, string> = { sulfur: 'Сера', t95: 'T95', d15: 'Плотность D15', cetane: 'Цетановое число' };
+const targetNames: Record<string, string> = { sulfur: 'Сера', t95: 'Выкипание', d15: 'Плотность', cetane: 'Цетановое число' };
 const info: Record<string, string> = {
   mae: 'Средняя ошибка прогноза в тех же единицах, что и сама величина. Чем меньше число, тем ближе прогноз к лабораторному результату.',
   coverage: 'Как часто настоящий результат оказывается внутри обещанного диапазона. Для диапазона в 80% честный результат близок к 0,8.',
@@ -14,7 +14,6 @@ const info: Record<string, string> = {
 };
 const n = (value: number | undefined) => value === undefined ? '—' : new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 3 }).format(value);
 const date = (value: string) => new Date(value).toLocaleDateString('ru-RU', { timeZone: 'UTC' });
-const algorithmName = (value: string) => value === 'lightgbm_quantile' ? 'LightGBM · квантильный прогноз' : 'Модель прогноза';
 
 function MetricInfo({ name }: { name: string }) {
   return <Tooltip content={info[name]}><button type="button" className="model-info" aria-label={`О метрике ${name}`}><IconInfoCircle aria-hidden="true" /></button></Tooltip>;
@@ -46,6 +45,6 @@ function ModelCard({ model, expanded, outOfRange, versionMismatch, onToggle, onD
     <div className="model-metric"><label>Покрытие диапазона <MetricInfo name="coverage" /></label><strong className={Math.abs(model.coverage - .8) <= .05 ? 'model-coverage-good' : 'model-coverage-warn'}>{n(model.coverage)}</strong></div>
     {model.metrics.winkler !== undefined && <div className="model-metric"><label>Точность диапазона <MetricInfo name="winkler" /></label><strong>{n(model.metrics.winkler)}</strong></div>}
     <span className={`model-active ${model.active ? '' : 'inactive'}`}>{model.active ? 'активна' : 'не активна'}</span><button className="model-download" onClick={onDownload}>Скачать паспорт</button></div>
-    <div className="model-training">Обучение <MetricInfo name="training" /> <span>{date(model.trainedOnRange.start)} — {date(model.trainedOnRange.end)}</span> · {algorithmName(model.algorithm)}</div>
-    {expanded && <div className="model-details"><div>Квантили <code>{model.quantiles.join(' / ')}</code></div><div>Настройка доверительного диапазона <code>{JSON.stringify(model.conformal)}</code></div><div>Признаки <code>{model.features.length ? model.features.join(', ') : 'нет данных'}</code></div><div>Ограничения признаков <code>{JSON.stringify(model.monotoneConstraints)}</code></div><div>Номер воспроизводимости <code>{model.seed}</code> · создана {date(model.createdAt)}</div><div>Версия ядра {model.coreVersion}</div><div>Остальные метрики <code>{Object.entries(model.metrics).filter(([key]) => key !== 'mae' && key !== 'winkler').map(([key, value]) => `${key}: ${n(value)}`).join(' · ') || '—'}</code></div><details><summary>Проверочные отпечатки данных</summary><pre>{JSON.stringify(model.dataHashes, null, 2)}</pre></details></div>}</article>;
+    <div className="model-training">Обучение <MetricInfo name="training" /> <span>{date(model.trainedOnRange.start)} — {date(model.trainedOnRange.end)}</span></div>
+    {expanded && <div className="model-details"><div>Средняя ошибка на проверке {n(model.metrics.mae)}</div><div>Доля попаданий в обещанный диапазон {n(model.coverage)}</div><div>Номер повтора расчёта {model.seed}</div></div>}</article>;
 }

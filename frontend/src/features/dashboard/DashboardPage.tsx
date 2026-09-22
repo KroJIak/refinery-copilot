@@ -97,9 +97,7 @@ export function DashboardPage() {
   const metrics = [
     {
       target: "sulfur",
-      title: store.card?.risks.some((risk) => risk.target === "sulfur")
-        ? "Сера P50"
-        : "Сера",
+      title: "Сера",
       unit: "мг/кг",
       value: getMetric("sulfur", /sulfur|Q21/i),
       limit: "норма ≤ 10 мг/кг",
@@ -107,7 +105,7 @@ export function DashboardPage() {
     },
     {
       target: "t95",
-      title: "T95",
+      title: "Выкипание",
       unit: "°C",
       value: getMetric("t95", /t95/i),
       limit: "норма ≤ 360 °C",
@@ -115,7 +113,7 @@ export function DashboardPage() {
     },
     {
       target: "cetane",
-      title: "ЦЧ",
+      title: "Цетановое",
       unit: "",
       value: getMetric("cetane", /cetane/i),
       limit: "норма ≥ 51",
@@ -257,7 +255,7 @@ export function DashboardPage() {
           </Link>
         ) : (
           <div className="dashboard-empty-result">
-            <span aria-hidden="true">✦</span>
+            <span aria-hidden="true" />
             {running
               ? "Агенты оценивают выбранный режим"
               : "Прогонов ещё не было"}
