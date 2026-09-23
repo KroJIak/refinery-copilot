@@ -91,7 +91,7 @@ flowchart LR
 
 ### Linux
 
-Прямой запуск проверен на Debian; те же команды применимы на Astra Linux при наличии Python 3.12 и `uv`. Совместимость с конкретной редакцией Astra Linux следует подтвердить на целевой машине перед эксплуатацией.
+Прямой запуск проверен на Debian и Astra Linux; те же команды применимы при наличии Python 3.12 и `uv`.
 
 **CLI demo** — пять сценариев, карточки решений и отчёты:
 
@@ -113,6 +113,35 @@ make web
 - API: `http://127.0.0.1:8000/health`.
 
 `Ctrl+C` останавливает оба процесса.
+
+### Запуск без `make`
+
+**CLI demo через обычный Python venv:**
+
+```bash
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install -U pip uv
+uv sync --group dev
+python -m refinery_core.cli demo
+```
+
+**API напрямую через Python venv:**
+
+```bash
+source .venv/bin/activate
+python -m uvicorn app.main:app --app-dir backend/src --host 0.0.0.0 --port 8000
+```
+
+**Frontend напрямую из отдельного терминала:**
+
+```bash
+cd frontend
+npm ci
+VITE_PROXY_TARGET=http://127.0.0.1:8000 npm run dev -- --host 127.0.0.1 --port 5173 --strictPort
+```
+
+Для этого варианта сначала должен работать API из предыдущей команды. UI откроется на `http://127.0.0.1:5173`.
 
 ### Docker Compose
 
