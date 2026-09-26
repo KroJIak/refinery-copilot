@@ -1,0 +1,50 @@
+[project]
+name = "refinery-copilot"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "pydantic>=2.7",
+    "python-dotenv>=1.0",
+    "refinery-core",
+]
+
+[dependency-groups]
+core = [
+    "polars>=1",
+    "pandas>=2.2",
+    "pyarrow>=16",
+    "numpy>=1.26",
+    "lightgbm>=4.4",
+    "scipy>=1.13",
+    "scikit-learn>=1.5",
+    "openpyxl>=3.1",
+    "rich>=13.7",
+]
+api = [
+    "fastapi>=0.111",
+    "uvicorn[standard]>=0.30",
+    "sse-starlette>=2.1",
+    "pydantic-settings>=2.3",
+]
+dev = [
+    {include-group = "core"},
+    {include-group = "api"},
+    "pytest>=8",
+    "ruff>=0.5",
+]
+
+[tool.uv.workspace]
+members = ["core", "backend"]
+
+[tool.uv.sources]
+refinery-core = { workspace = true }
+refinery-copilot-api = { workspace = true }
+
+[tool.pytest.ini_options]
+testpaths = ["core/tests"]
+pythonpath = ["core/src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["core/src"]

@@ -1,0 +1,7 @@
+services:
+  api:
+    ports:
+      - "${EXTERNAL_API_PORT:-8000}:8000"
+  web:
+    ports:
+      - "${EXTERNAL_WEB_PORT:-8080}:80"

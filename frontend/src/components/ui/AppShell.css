@@ -1,0 +1,31 @@
+.app-shell { min-height: 100vh; }
+.app-header { height: 72px; display: flex; align-items: center; justify-content: space-between; padding: 0 28px; border-bottom: 1px solid #2a2a2d; background: #181819; position: sticky; top: 0; z-index: 30; gap: 20px; }
+.app-brand-group { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+.app-brand { font-size: 24px; font-weight: 600; letter-spacing: -.045em; }
+.mock-badge { background: #2dd4bf29; color: #2dd4bf; font-size: 13px; padding: 5px 11px; border-radius: 999px; }
+.app-freshness { display: flex; gap: 12px; }
+.freshness-pill { background: #242426; border: 1px solid #303034; padding: 8px 15px; border-radius: 999px; font-size: 14px; color: #b6b6bd; white-space: nowrap; }
+.freshness-pill[data-status=warn] { color: var(--warning); }
+.freshness-pill[data-status=stale], .freshness-pill[data-status=missing] { color: var(--danger); }
+.app-body { display: grid; grid-template-columns: 236px minmax(0, 1fr); min-height: calc(100vh - 72px); }
+.app-sidebar { border-right: 1px solid #2a2a2d; background: #181819; padding: 24px 12px; }
+.app-nav { display: grid; gap: 8px; position: sticky; top: 98px; }
+.app-nav a { display: flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 12px; color: var(--muted); font-size: 17px; transition: background .15s, color .15s; }
+.app-nav a:hover { color: var(--text); background: #ffffff05; }
+.app-nav a.active { color: var(--text); background: #28282b; }
+.app-main { padding: 32px; min-width: 0; }
+.global-error { margin-bottom: 20px; }
+.global-error .text-button { margin-left: auto; white-space: nowrap; }
+.tooltip-content { max-width: 310px; background: #303034; color: #e5e5ea; border: 1px solid #47474d; border-radius: 10px; padding: 10px 13px; font-size: 13px; line-height: 1.55; box-shadow: 0 10px 35px #0005; z-index: 100; }
+.tooltip-arrow { fill: #303034; }
+.skip-link { position: fixed; top: -60px; left: 16px; background: var(--accent); color: white; padding: 12px; z-index: 100; border-radius: 8px; }
+.skip-link:focus { top: 12px; }
+@media (min-width: 1700px) { .app-main { padding: 38px 44px; } }
+@media (max-width: 1100px) { .app-body { grid-template-columns: 180px minmax(0, 1fr); } .app-main { padding: 24px; } .app-nav a { font-size: 15px; } }
+@media (max-width: 760px) {
+  .app-header { height: auto; min-height: 68px; padding: 15px 18px; flex-wrap: wrap; gap: 14px; }
+  .app-brand { font-size: 21px; } .app-freshness { gap: 8px; } .freshness-pill { padding: 6px 10px; font-size: 12px; }
+  .app-body { display: block; } .app-sidebar { padding: 10px 12px; border-right: 0; border-bottom: 1px solid var(--border); }
+  .app-nav { display: flex; gap: 5px; overflow-x: auto; position: static; padding: 3px; } .app-nav a { white-space: nowrap; min-height: 38px; padding: 0 13px; font-size: 14px; }
+  .app-main { padding: 22px 16px; }
+}

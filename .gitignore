@@ -1,0 +1,81 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+.eggs/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+*.tsbuildinfo
+
+# Node
+node_modules/
+frontend/dist/
+
+# Secrets and local env
+.env
+.env.*
+!.env.example
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+!frontend/.env.example
+!frontend/.env.local.example
+
+# Data and run artifacts
+data/
+artifacts/
+/catboost_info/
+
+
+# Runtime logs and local reports
+*.log
+logs/
+coverage/
+playwright-report/
+test-results/
+.vite/
+
+# Local docs and mockups
+docs/internal/
+testing/
+**/.obsidian/
+
+# AI / agent tooling
+.agents/
+.claude/
+.codex/
+.grok/
+.ai/
+.cursor/
+.continue/
+.aider*
+.windsurf/
+.gemini/
+.github/copilot-instructions.md
+AGENTS.md
+CLAUDE.md
+.mcp.json
+
+# Editors and OS
+.idea/
+.vscode/
+*.code-workspace
+*.iml
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db

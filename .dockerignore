@@ -1,0 +1,13 @@
+.venv/
+**/__pycache__/
+**/.pytest_cache/
+**/.ruff_cache/
+**/*.egg-info/
+frontend/
+docs/
+testing/
+.git/
+artifacts/runs/
+artifacts/timeline/
+*.md
+.env
